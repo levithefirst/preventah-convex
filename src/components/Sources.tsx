@@ -24,13 +24,15 @@ export default function Sources({
   if (conditions.length === 0) return null;
 
   return (
-    <section className="card">
-      <h2>Read more</h2>
+    <section className="window sources">
+      <p className="bar cream">Read more</p>
+      <h2>Current sources for what you track</h2>
       <div className="chips">
         {conditions.map((condition) => (
           <button
             key={condition.id}
-            className={conditionId === condition.id ? 'chip on' : 'chip'}
+            className="chip"
+            aria-pressed={conditionId === condition.id}
             onClick={() => setConditionId(condition.id)}
           >
             {condition.name}

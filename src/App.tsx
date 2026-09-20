@@ -8,8 +8,17 @@ import ConditionPicker from './components/ConditionPicker';
 import Today from './components/Today';
 import Board from './components/Board';
 import MailSettings from './components/MailSettings';
+import { Disclaimer, Mark } from './components/Brand';
+
+/**
+ * App chrome: a mark, the household's day, and four tabs. That is the
+ * whole navigation. There is no marketing header above it and no route
+ * below it that is not one of these four.
+ */
 
 type Tab = 'today' | 'conditions' | 'board' | 'mail';
+
+const TABS: Tab[] = ['today', 'conditions', 'board', 'mail'];
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(() => loadSession());
@@ -27,27 +36,47 @@ export default function App() {
   }, [session, me]);
 
   if (!session) return <Gate onReady={setSession} />;
-  if (me === undefined) return <main className="wrap"><p>Loading.</p></main>;
-  if (me === null) return <main className="wrap"><p>Loading.</p></main>;
-
-  if (me.needsConsent) {
-    return <Consent memberId={session.memberId} />;
+  if (me === undefined || me === null) {
+    return (
+      <main className="wrap">
+        <p className="muted">Loading.</p>
+      </main>
+    );
   }
+
+  if (me.needsConsent) return <Consent memberId={session.memberId} />;
+
+  const leave = () => {
+    clearSession();
+    setSession(null);
+  };
 
   return (
     <main className="wrap">
-      <header className="top">
-        <h1>Preventah All Gas</h1>
-        <p className="sub">
-          {me.name} &middot; {me.dayKey} &middot; {me.doneCount}/3 done today
+      <div className="chrome">
+        <Mark />
+        <span className="wordmark">Preventah</span>
+        <p className="chromeMeta">
+          {me.name} &middot; {me.dayKey} &middot; {me.doneCount} of 3 done today
         </p>
-      </header>
+      </div>
 
-      <nav className="tabs">
-        {(['today', 'conditions', 'board', 'mail'] as Tab[]).map((name) => (
+      <h1 className="srOnly">
+        {tab === 'today'
+          ? "Today's three actions"
+          : tab === 'conditions'
+            ? 'Conditions in your family'
+            : tab === 'board'
+              ? 'Household board'
+              : 'Morning plan by email'}
+      </h1>
+
+      <nav className="tabs sections" aria-label="Sections">
+        {TABS.map((name) => (
           <button
             key={name}
-            className={tab === name ? 'tab on' : 'tab'}
+            className="tab"
+            aria-current={tab === name ? 'page' : undefined}
             onClick={() => setTab(name)}
           >
             {name}
@@ -60,22 +89,7 @@ export default function App() {
       {tab === 'board' && <Board householdId={session.householdId} />}
       {tab === 'mail' && <MailSettings me={me} />}
 
-      <footer className="foot">
-        <p>
-          General lifestyle guidance from public-health sources. Not medical advice, not a
-          diagnosis, not a prediction. A family history raises the value of prevention and of a
-          conversation with a clinician.
-        </p>
-        <button
-          className="link"
-          onClick={() => {
-            clearSession();
-            setSession(null);
-          }}
-        >
-          Leave this household on this device
-        </button>
-      </footer>
+      <Disclaimer onLeave={leave} />
     </main>
   );
 }

@@ -1,4 +1,4 @@
-import { action, internalAction, internalMutation, internalQuery } from './_generated/server';
+import { action, internalAction, internalMutation, internalQuery, query } from './_generated/server';
 import { v } from 'convex/values';
 import { internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
@@ -126,6 +126,30 @@ export const recent = internalQuery({
       status: row.status,
       at: row.at,
     }));
+  },
+});
+
+/**
+ * The member's most recent send, for the mail tab.
+ *
+ * Returns the row's own words rather than a status code: someone reading
+ * this wants to know whether the last email arrived, not what HTTP said.
+ */
+export const lastSendFor = query({
+  args: { memberId: v.id('members') },
+  returns: v.union(
+    v.null(),
+    v.object({ kind: v.string(), dayKey: v.string(), status: v.string(), at: v.number() }),
+  ),
+  handler: async (ctx, args) => {
+    const rows = await ctx.db
+      .query('mailLog')
+      .filter((q) => q.eq(q.field('memberId'), args.memberId))
+      .order('desc')
+      .take(1);
+    if (rows.length === 0) return null;
+    const row = rows[0];
+    return { kind: row.kind, dayKey: row.dayKey, status: row.status, at: row.at };
   },
 });
 

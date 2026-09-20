@@ -12,7 +12,7 @@
 - **Auth:** none
 - **AI models:** gpt-5-nano, falling back to gpt-4.1-nano then gpt-4o-mini
 - **Started:** 2026-09-19T17:58:00Z
-- **Last updated:** 2026-09-20T18:05:00Z
+- **Last updated:** 2026-09-20T18:48:00Z
 
 ## Log
 
@@ -135,3 +135,28 @@ working-directory prefix. Earlier entries keep their dates, SHAs and facts;
 their file paths were normalised to this root, since that is where the files
 they name now live. Live URLs are unchanged, and no new Convex project was
 created.
+
+### 2026-09-20 - working tree
+Restyled onto the Preventah tokens: lavender canvas, cream windows with a 2px
+ink edge, and depth from an offset blush plate rather than a blur. The palette
+carries a rule the product needs, which is that nothing is traffic-lit. Done is
+mint, not done is cream, and a quiet day on the board reads as quiet rather
+than as a failure, because a shared scoreboard that shames people is one a
+family deletes.
+
+The Gate is now the first screen rather than a form: the purpose line, two
+calls to action, and after creating a household the join code at display size
+with a copy button and the plain statement that it is not a password. Consent
+gained a real checkbox that gates the button. Today shows each action's source
+without opening the disclosure, since a citation you have to hunt for is not
+really one. The mail tab reports its last send in plain language via a new
+`mail.lastSendFor` query. Gate to consent to a check-in is three taps.
+
+Verified by rendering rather than by inspection: Chromium at 390px reports no
+horizontal scroll, one h1, every input labelled, no tap target under 44px and
+no text input under 16px. Contrast was computed for all nine token pairs in
+use, lowest 7.09:1. Two bugs turned up that way and were fixed: the blush
+plate was painting over its own panel because the positioned pseudo-element
+made a stacking context, now two zero-blur shadows; and a shared `capitalize`
+rule was title-casing the Gate into "Start A Household". Motion is CSS only,
+80/120/200ms, and `prefers-reduced-motion: reduce` turns all of it off.

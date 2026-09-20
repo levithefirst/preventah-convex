@@ -5,24 +5,28 @@ import type { Action, Me } from '../types';
 import Sources from './Sources';
 
 /**
- * Today's three actions.
+ * Today: three windows, three tiers each, one tap to check in.
  *
- * Each carries the same three spend tiers, and the free one is always a
- * real option rather than a locked preview. Checking in is one tap on the
- * tier you actually did.
+ * The mint bar says this is a habit day. Done is mint and not-done is
+ * cream, which is the whole status vocabulary: there is no red for a
+ * missed action, because a missed action is not an error.
  */
 export default function Today({ me }: { me: Me }) {
   return (
-    <section>
+    <section className="stack">
       <Wording me={me} />
+
       {me.isBaseline && (
-        <p className="note">
-          This is the general plan. Pick the conditions that run in your family to tune it.
+        <p className="window">
+          This is the general plan. Pick the conditions that run in your family and today's three
+          change to match.
         </p>
       )}
-      {me.actions.map((action) => (
-        <ActionCard key={action.id} action={action} me={me} />
+
+      {me.actions.map((action, index) => (
+        <ActionCard key={action.id} action={action} me={me} plated={index === 0} />
       ))}
+
       {me.conditions.length > 0 && <Sources conditions={me.conditions} />}
     </section>
   );
@@ -55,45 +59,51 @@ function Wording({ me }: { me: Me }) {
 
   const label =
     me.rewrite === 'openai'
-      ? `Wording tightened \u00b7 sources unchanged${me.model ? ` \u00b7 ${me.model}` : ''}`
+      ? 'Wording tightened · sources unchanged'
       : 'Catalog wording';
 
   return (
-    <p className="muted wording">
-      {busy && me.rewrite === null ? 'Tightening wording...' : label}{' '}
-      <button
-        className="link"
-        disabled={busy}
-        onClick={() => {
-          setBusy(true);
-          void generate({ memberId: me.memberId }).finally(() => setBusy(false));
-        }}
-      >
+    <p className="tiny">
+      {busy && me.rewrite === null ? 'Tightening wording…' : label}
+      {me.rewrite === 'openai' && me.model ? ` · ${me.model}` : ''}{' '}
+      <button className="link" disabled={busy} onClick={() => {
+        setBusy(true);
+        void generate({ memberId: me.memberId }).finally(() => setBusy(false));
+      }}>
         Refresh wording
       </button>
     </p>
   );
 }
 
-function ActionCard({ action, me }: { action: Action; me: Me }) {
+const BAR: Record<string, string> = {
+  diet: 'Eat',
+  exercise: 'Move',
+  habit: 'Habit',
+};
+
+function ActionCard({ action, me, plated }: { action: Action; me: Me; plated: boolean }) {
   const check = useMutation(api.checkins.check);
   const undo = useMutation(api.checkins.undo);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const detailId = `detail-${action.id}`;
 
   return (
-    <article className={action.doneTier ? 'card done' : 'card'}>
-      <p className="kind">{action.type}</p>
+    <article className={plated ? 'window plated' : 'window'}>
+      <p className="bar mint">{BAR[action.type] ?? action.type}</p>
+
       <h2>{action.title}</h2>
       <p>{action.description}</p>
 
-      {action.safetyNote && <p className="warn">{action.safetyNote}</p>}
+      {action.safetyNote && <p className="safety">{action.safetyNote}</p>}
 
       <div className="tiers">
         {action.options.map((option) => (
           <button
             key={option.tier}
-            className={action.doneTier === option.tier ? 'tier on' : 'tier'}
+            className="tier"
+            aria-pressed={action.doneTier === option.tier}
             onClick={() => {
               setError(null);
               void check({ memberId: me.memberId, actionId: action.id, tier: option.tier }).then(
@@ -110,11 +120,11 @@ function ActionCard({ action, me }: { action: Action; me: Me }) {
         ))}
       </div>
 
-      {error && <p className="bad">{error}</p>}
+      {error && <p className="alert">{error}</p>}
 
       {action.doneTier && (
-        <p className="ok">
-          Checked in at the {action.doneTier} tier.{' '}
+        <p className="muted">
+          Done today at the {action.doneTier} tier.{' '}
           <button
             className="link"
             onClick={() => void undo({ memberId: me.memberId, actionId: action.id })}
@@ -124,35 +134,36 @@ function ActionCard({ action, me }: { action: Action; me: Me }) {
         </p>
       )}
 
-      <button className="link" onClick={() => setOpen(!open)}>
-        {open ? 'Less' : 'Why this, and how'}
+      {/* The source is readable without opening anything. A citation you
+          have to go looking for is not really a citation. */}
+      <p className="sourceLine">
+        Source:{' '}
+        <a href={action.sourceUrl} target="_blank" rel="noreferrer">
+          {action.sourceName}
+        </a>
+        {action.relatedConditions.length > 0
+          ? ` · connects to ${action.relatedConditions.join(', ')}`
+          : ' · general prevention'}
+      </p>
+
+      <button className="link" aria-expanded={open} aria-controls={detailId} onClick={() => setOpen(!open)}>
+        {open ? 'Hide why and how' : 'Why this, and how'}
       </button>
 
-      {open && (
-        <div className="detail">
-          <p>{action.why}</p>
-          <ol>
-            {action.howTo.map((step) => (
-              <li key={step}>{step}</li>
-            ))}
-          </ol>
-          <p className="muted">{action.benefit}</p>
-          <p className="muted">
-            Today's target: {action.target}
-          </p>
-          <p className="muted">
-            {action.relatedConditions.length > 0
-              ? `Connects to: ${action.relatedConditions.join(', ')}`
-              : 'General prevention.'}
-          </p>
-          <p className="muted">
-            Source:{' '}
-            <a href={action.sourceUrl} target="_blank" rel="noreferrer">
-              {action.sourceName}
-            </a>
-          </p>
+      <div className={open ? 'disclosure open' : 'disclosure'} id={detailId}>
+        <div className="disclosureInner">
+          <div className="detail">
+            <p>{action.why}</p>
+            <ol>
+              {action.howTo.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+            <p className="muted">{action.benefit}</p>
+            <p className="muted">Today's target: {action.target}</p>
+          </div>
         </div>
-      )}
+      </div>
     </article>
   );
 }

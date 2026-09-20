@@ -1,106 +1,391 @@
-/* Deliberately plain. The loop is the point; this is enough to use it on a phone. */
+/**
+ * Preventah All Gas.
+ *
+ * A window system on a lavender canvas: every surface is a cream panel
+ * with a 2px ink edge, and depth comes from an offset blush plate rather
+ * than a blur. Blush is structural, not decorative, so it appears two or
+ * three times per screen and never as a fill.
+ *
+ * One rule shapes the palette more than any other: nothing here uses
+ * traffic-light colour. A condition is not a warning, a missed day is not
+ * an error, and an empty board is not a failure. Done is mint. Not done
+ * is cream. There is no red anywhere except a genuine input error.
+ */
+
+@font-face { font-display: swap; font-family: 'Bricolage Grotesque'; src: local('Bricolage Grotesque'); }
+@font-face { font-display: swap; font-family: 'Plus Jakarta Sans'; src: local('Plus Jakarta Sans'); }
+
 :root {
-  --ink: #16181d;
-  --muted: #5d6470;
-  --line: #d8dce3;
-  --bg: #f6f7f9;
-  --card: #ffffff;
-  --on: #0b6b3a;
-  --onbg: #e7f5ed;
-  --bad: #9b1c1c;
-  --warnbg: #fdf3e3;
+  --canvas: #c9b6ea;
+  --cream: #f6f1e8;
+  --ink: #141414;
+  --mint: #b7d9c2;
+  --blush: #e8b4b8;
+
+  /* Muted text that still clears 7:1 on cream. */
+  --ink-soft: #55504a;
+  /* The only red in the product, and only for a rejected input. */
+  --alert: #8a2b2b;
+
+  --edge: 2px solid var(--ink);
+  --radius: 14px;
+  --plate: 6px;
+
+  /* Named so vendoring the real files later is one @font-face away. */
+  --font-title: 'Bricolage Grotesque', 'Avenir Next', 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --press: 80ms;
+  --fill: 120ms;
+  --disclose: 200ms;
 }
 
 * { box-sizing: border-box; }
 
+html { -webkit-text-size-adjust: 100%; }
+
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--canvas);
   color: var(--ink);
-  font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  /* The canvas is a flat field. No gradient, no texture, no image. */
 }
 
-.wrap { max-width: 720px; margin: 0 auto; padding: 16px; }
-h1 { font-size: 22px; margin: 0 0 4px; }
-h2 { font-size: 17px; margin: 0 0 6px; }
-p { margin: 6px 0; }
+h1, h2, h3 { font-family: var(--font-title); letter-spacing: -0.01em; margin: 0; }
+h1 { font-size: clamp(28px, 7vw, 40px); line-height: 1.1; }
+h2 { font-size: 19px; line-height: 1.25; }
+h3 { font-size: 16px; }
+p { margin: 8px 0; }
 
-.top { margin-bottom: 12px; }
-.sub, .muted { color: var(--muted); font-size: 14px; }
+a { color: var(--ink); text-underline-offset: 3px; }
 
-.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Visible to a screen reader, absent from the layout. Used for the one
+   h1 per screen, which the tab bar already states visually. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ------------------------------------------------------------ layout */
+
+.wrap {
+  max-width: 680px;
+  margin: 0 auto;
+  /* The right gutter carries the plate offset so it is never clipped. */
+  padding: 20px calc(16px + var(--plate)) 40px 16px;
+}
+
+.stack > * + * { margin-top: 14px; }
+
+/* ------------------------------------------------------------ chrome */
+
+.chrome {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.mark {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border: var(--edge);
+  border-radius: 10px;
+  background: var(--mint);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-title);
+  font-weight: 800;
+  font-size: 17px;
+}
+
+.wordmark { font-family: var(--font-title); font-weight: 800; font-size: 19px; }
+
+.chromeMeta { font-size: 14px; color: var(--ink); opacity: 0.8; width: 100%; }
+
+/* --------------------------------------------------------------- tabs */
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+/* The four section names get a grid rather than flex wrap, which at phone
+   width otherwise breaks 3 + 1 and reads as a mistake. */
+.tabs.sections { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.tabs.sections .tab { padding: 10px 4px; font-size: 13px; }
+@media (min-width: 480px) {
+  .tabs.sections { gap: 8px; }
+  .tabs.sections .tab { padding: 10px 12px; font-size: 16px; }
+}
+
 .tab {
-  flex: 1 1 auto; padding: 8px 10px; border: 1px solid var(--line);
-  background: var(--card); border-radius: 8px; cursor: pointer; font: inherit;
-  text-transform: capitalize;
+  flex: 1 1 auto;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: var(--edge);
+  border-radius: 10px;
+  background: var(--cream);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--fill) ease, transform var(--press) ease;
 }
-.tab.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+/* Only the four section names, which are stored lowercase. */
+.tabs.sections .tab { text-transform: capitalize; }
+.tab:hover { background: #fffaf2; }
+.tab:active { transform: translateY(1px); }
+.tab[aria-current='page'] { background: var(--ink); color: var(--cream); }
 
-.card {
-  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-  padding: 14px; margin-bottom: 12px;
-}
-.card.done { border-color: var(--on); background: var(--onbg); }
-.card.picked { border-color: var(--ink); border-width: 2px; }
+/* ------------------------------------------------------------ windows */
 
-.kind { text-transform: uppercase; letter-spacing: .08em; font-size: 11px; color: var(--muted); margin: 0; }
-
-.tiers { display: grid; gap: 8px; margin: 10px 0; }
-@media (min-width: 560px) { .tiers { grid-template-columns: repeat(3, 1fr); } }
-.tier {
-  display: flex; flex-direction: column; gap: 4px; text-align: left;
-  padding: 10px; border: 1px solid var(--line); border-radius: 8px;
-  background: var(--card); cursor: pointer; font: inherit;
-}
-.tier.on { border-color: var(--on); background: var(--onbg); }
-.tierLabel { font-weight: 700; font-size: 13px; }
-.tierTitle { font-size: 14px; }
-.tierCost { font-size: 12px; color: var(--muted); }
-
-.row { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
-.score { text-align: right; white-space: nowrap; }
-.big { display: block; font-size: 22px; font-weight: 700; }
-.pick { font-size: 13px; color: var(--muted); white-space: nowrap; }
-
-.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
-.chip {
-  padding: 5px 9px; border: 1px solid var(--line); border-radius: 999px;
-  background: var(--card); cursor: pointer; font: inherit; font-size: 13px;
-}
-.chip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
-
-label { display: block; margin: 8px 0; font-size: 14px; color: var(--muted); }
-input {
-  display: block; width: 100%; margin-top: 4px; padding: 9px;
-  border: 1px solid var(--line); border-radius: 8px; font: inherit; color: var(--ink);
+.window {
+  position: relative;
+  background: var(--cream);
+  border: var(--edge);
+  border-radius: var(--radius);
+  padding: 16px;
 }
 
-.primary {
-  margin-top: 10px; padding: 10px 14px; border: 0; border-radius: 8px;
-  background: var(--ink); color: #fff; font: inherit; cursor: pointer;
+/* Depth is an offset plate, never a blur under the panel. Two zero-blur
+   shadows: blush first, then ink spread behind it for the plate's edge.
+   Done with shadows rather than a positioned ::before, which would need a
+   stacking context and would then paint over the panel's own background. */
+.window.plated {
+  box-shadow:
+    var(--plate) var(--plate) 0 0 var(--blush),
+    var(--plate) var(--plate) 0 2px var(--ink);
 }
-.primary:disabled { opacity: .5; cursor: default; }
+
+/* A bar states what kind of window this is. */
+.bar {
+  margin: -16px -16px 14px;
+  padding: 9px 16px;
+  border-bottom: var(--edge);
+  border-radius: calc(var(--radius) - 2px) calc(var(--radius) - 2px) 0 0;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.bar.ink { background: var(--ink); color: var(--cream); }
+.bar.mint { background: var(--mint); color: var(--ink); }
+.bar.cream { background: var(--cream); color: var(--ink); }
+
+/* --------------------------------------------------------------- text */
+
+.muted { color: var(--ink-soft); font-size: 14px; }
+.lede { font-size: 17px; }
+.tiny { font-size: 13px; color: var(--ink-soft); }
+.alert { color: var(--alert); font-size: 14px; font-weight: 600; }
+
+/* ------------------------------------------------------------ buttons */
+
+.btn {
+  min-height: 44px;
+  padding: 11px 16px;
+  border: var(--edge);
+  border-radius: 10px;
+  background: var(--cream);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--fill) ease, transform var(--press) ease;
+}
+.btn:hover { background: #fffaf2; }
+.btn:active { transform: translate(1px, 1px); }
+.btn:disabled { opacity: 0.45; cursor: default; transform: none; }
+
+/* One primary per screen. */
+.btn.primary { background: var(--mint); }
+.btn.primary:hover { background: #c6e2cf; }
+
+.btn.block { width: 100%; }
 
 .link {
-  background: none; border: 0; padding: 4px 0; color: var(--ink);
-  text-decoration: underline; cursor: pointer; font: inherit; font-size: 14px;
+  min-height: 44px;
+  padding: 8px 0;
+  background: none;
+  border: 0;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.link:disabled { opacity: 0.45; cursor: default; }
+
+.btnRow { display: flex; flex-wrap: wrap; gap: 10px; }
+.btnRow > .btn { flex: 1 1 200px; }
+
+/* ------------------------------------------------------------- inputs */
+
+.field { display: block; margin: 12px 0; }
+.field > span { display: block; font-size: 14px; font-weight: 600; margin-bottom: 5px; }
+
+input[type='text'],
+input[type='email'],
+input:not([type]) {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: var(--edge);
+  border-radius: 10px;
+  background: #fffdf8;
+  color: var(--ink);
+  font: inherit;
+  /* Exactly 16px: anything smaller makes iOS zoom the viewport. */
+  font-size: 16px;
 }
 
-.ok { color: var(--on); font-size: 14px; }
-.bad { color: var(--bad); font-size: 14px; }
-.warn { background: var(--warnbg); padding: 8px; border-radius: 6px; font-size: 14px; }
-.note { background: var(--onbg); padding: 10px; border-radius: 8px; font-size: 14px; }
+.check {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-height: 44px;
+  padding: 10px;
+  border: var(--edge);
+  border-radius: 10px;
+  background: #fffdf8;
+  cursor: pointer;
+  font-size: 15px;
+  transition: background-color var(--fill) ease;
+}
+.check:hover { background: #fff; }
+.check input { width: 22px; height: 22px; margin: 2px 0 0; flex: none; accent-color: var(--ink); }
 
-.detail { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; }
-.detail ol { padding-left: 20px; margin: 6px 0; }
+/* -------------------------------------------------------------- chips */
 
-.consent { padding-left: 18px; }
-.consent li { margin-bottom: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
 
-.source { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 8px; }
-.source a { color: var(--ink); }
+.chip {
+  min-height: 44px;
+  padding: 9px 13px;
+  border: var(--edge);
+  border-radius: 999px;
+  background: var(--cream);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--fill) ease, transform var(--press) ease;
+}
+.chip:hover { background: #fffaf2; }
+.chip:active { transform: translateY(1px); }
+.chip[aria-pressed='true'] { background: var(--ink); color: var(--cream); }
 
-.foot { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 12px; }
-.foot p { color: var(--muted); font-size: 13px; }
+/* -------------------------------------------------------------- tiers */
 
-.wording { margin: 0 0 10px; }
+.tiers { display: grid; gap: 10px; margin: 14px 0 10px; }
+@media (min-width: 560px) { .tiers { grid-template-columns: repeat(3, 1fr); } }
+
+.tier {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 44px;
+  padding: 12px;
+  text-align: left;
+  border: var(--edge);
+  border-radius: 10px;
+  background: #fffdf8;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  transition: background-color var(--fill) ease, transform var(--press) ease;
+}
+.tier:hover { background: #fff; }
+.tier:active { transform: translate(1px, 1px); }
+/* Done is mint. Not done is cream. Never a green tick on a red field. */
+.tier[aria-pressed='true'] { background: var(--mint); }
+
+.tierLabel { font-family: var(--font-title); font-weight: 800; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; }
+.tierTitle { font-size: 15px; }
+.tierCost { font-size: 13px; color: var(--ink-soft); }
+
+/* --------------------------------------------------------- disclosure */
+
+.disclosure {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--disclose) ease;
+}
+.disclosure.open { grid-template-rows: 1fr; }
+.disclosureInner { overflow: hidden; }
+.disclosure:not(.open) .disclosureInner { visibility: hidden; }
+.disclosure.open .disclosureInner { visibility: visible; }
+
+.detail { border-top: var(--edge); margin-top: 12px; padding-top: 12px; }
+.detail ol { padding-left: 20px; margin: 8px 0; }
+.detail li { margin-bottom: 4px; }
+
+/* --------------------------------------------------------------- misc */
+
+.kind { font-family: var(--font-title); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 2px; }
+
+.safety { background: #fffdf8; border: var(--edge); border-radius: 10px; padding: 10px; font-size: 14px; margin: 10px 0; }
+
+.sourceLine { font-size: 14px; margin: 8px 0 0; }
+
+.row { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+
+.score { text-align: right; white-space: nowrap; font-family: var(--font-title); }
+.score .big { display: block; font-size: 26px; font-weight: 800; line-height: 1; }
+
+/* The join code is the one thing on the Gate worth shouting. */
+.code {
+  font-family: var(--font-title);
+  font-size: clamp(34px, 11vw, 52px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  margin: 6px 0;
+  word-break: break-all;
+}
+
+.codeRow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.sources .source { border-top: var(--edge); padding-top: 10px; margin-top: 10px; }
+
+.empty { font-size: 15px; color: var(--ink-soft); }
+
+/* ------------------------------------------------------------- footer */
+
+.foot { margin-top: 24px; border-top: var(--edge); padding-top: 14px; }
+.foot p { font-size: 13px; color: var(--ink); opacity: 0.85; }
+
+/* Everything above is decoration. This turns all of it off. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
