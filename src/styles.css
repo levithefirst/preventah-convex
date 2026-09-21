@@ -639,3 +639,21 @@ li { margin-bottom: 6px; }
 .acc.open .chevron { transform: rotate(-135deg) translate(-2px, -2px); }
 
 .accBody { margin: 0; padding: 14px 16px 16px; }
+
+/* A rule with the word "or" sitting in it, between Google and the form. */
+.orRule {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 6px;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+.orRule::before,
+.orRule::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: var(--ink);
+  opacity: 0.25;
+}

@@ -9,10 +9,10 @@
 - **Convex deployment:** https://qualified-hummingbird-614.convex.cloud
 - **Components:** none
 - **Convex features:** schema, tables, indexes, queries, mutations, actions, internal functions, HTTP actions, crons, realtime queries, static site routes
-- **Auth:** none
+- **Auth:** Convex Auth (Password, plus Google when configured)
 - **AI models:** gpt-5-nano, falling back to gpt-4.1-nano then gpt-4o-mini
 - **Started:** 2026-09-19T17:58:00Z
-- **Last updated:** 2026-09-21T16:04:00Z
+- **Last updated:** 2026-09-21T16:40:00Z
 
 ## Log
 
@@ -244,3 +244,39 @@ auth-gated queries without them would have left a working app that nobody
 could sign in to, so identity is still this browser and Profile says so
 plainly. The Google button is not in the build either: it is gated on
 `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`, and no client secret was fabricated.
+
+### 2026-09-21 - working tree
+Accounts wired, and the keys that make them work moved to a workflow.
+`@convex-dev/auth` signs sessions with a keypair that must live on the
+deployment, and this build environment cannot reach convex.dev, so
+`.github/workflows/init-auth.yml` generates the RS256 pair in Actions and sets
+`JWT_PRIVATE_KEY`, `JWKS` and `SITE_URL` there. It is manual-only and does not
+overwrite existing keys without `--force`, because rotating them signs every
+live session out. Key material never reaches argv, a shell or the log: values
+go to the CLI over stdin, and any error output is redacted before printing.
+Two things in the plan did not survive contact with the CLI and were changed:
+`convex env set` has no `--yes` flag and rejects it outright, and it documents
+stdin as the way to keep secrets out of shell history, which is stronger than
+passing them as arguments anyway.
+
+Password is always offered; Google is added only when both halves of its
+credential are present. Nothing about sign-in renders until
+`convex/authStatus.ts` reports the deployment can actually sign a session, so
+deploying this before the workflow runs leaves the app exactly as it was
+rather than showing a button that throws.
+
+Identity moves to the account without stranding anyone. A browser that never
+signs in keeps using its member id; the moment an account exists it decides,
+and `members.today` ignores the id in its argument for a signed-in caller.
+`convex/account.ts` claims a member left behind by the old flow, once per
+account and only one nobody owns. `auth.addHttpRoutes(http)` sits alongside
+the exact page routes; there is still no `pathPrefix: "/"`.
+
+One long-standing bug surfaced while verifying this. Every local production
+build had been emitting a stub: with `VITE_CONVEX_URL` unset, Vite folds
+`import.meta.env.VITE_CONVEX_URL` to undefined, decides the whole app is
+unreachable, and ships a bundle containing only the "not configured" message.
+The deployed site was fine because CI passes the variable through
+`--cmd-url-env-var-name`, but the committed `convex/siteAssets.ts` had been a
+217 KB shell rather than the app. A tracked `.env` holding the public
+deployment URL fixes it; the bundle is now 350 KB and contains the product.

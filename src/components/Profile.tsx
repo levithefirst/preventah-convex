@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from 'convex/react';
+import { useAuthActions } from '@convex-dev/auth/react';
 import { api } from '../../convex/_generated/api';
 import type { Me } from '../types';
 import type { Id } from '../../convex/_generated/dataModel';
@@ -17,12 +18,17 @@ export default function Profile({
   me,
   householdId,
   onLeave,
+  authed,
 }: {
   me: Me;
   householdId: Id<'households'>;
   onLeave: () => void;
+  authed: boolean;
 }) {
   const board = useQuery(api.households.board, { householdId });
+  const account = useQuery(api.account.me, authed ? {} : 'skip');
+  const status = useQuery(api.authStatus.status, {});
+  const { signOut } = useAuthActions();
   const [confirming, setConfirming] = useState(false);
 
   return (
@@ -85,11 +91,34 @@ export default function Profile({
       </div>
 
       <div className="window">
-        <p className="bar ink">Accounts</p>
-        <p className="muted">
-          Email and password sign-in is not switched on yet, so this browser is the only thing
-          that remembers you. Until it is, clearing site data means rejoining with the code.
-        </p>
+        <p className="bar ink">Account</p>
+        {authed && account ? (
+          <>
+            <dl className="pairs">
+              <dt>Signed in as</dt>
+              <dd>{account.name ?? me.name}</dd>
+              <dt>Email</dt>
+              <dd>{account.email ?? '\u2014'}</dd>
+            </dl>
+            <p className="tiny">
+              Your email is set by the account you signed in with and is not editable here.
+            </p>
+            <button className="btn" onClick={() => void signOut()}>
+              Sign out
+            </button>
+          </>
+        ) : status?.ready ? (
+          <p className="muted">
+            You are not signed in, so this browser is the only thing that remembers you. Clearing
+            site data would mean rejoining with the code. Sign in from the home page to attach
+            this household to an account.
+          </p>
+        ) : (
+          <p className="muted">
+            Accounts are not switched on for this deployment yet, so this browser is the only
+            thing that remembers you. Clearing site data means rejoining with the code.
+          </p>
+        )}
       </div>
     </section>
   );

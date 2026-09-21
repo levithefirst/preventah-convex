@@ -1,4 +1,7 @@
 node_modules
 dist
+
+# Vite's convention, and the reason .env itself is tracked: .env holds the
+# public deployment URL the build needs, .env.local holds anything secret.
 .env.local
-.env
+.env.*.local

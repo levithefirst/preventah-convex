@@ -1,0 +1,29 @@
+name: init-auth
+
+# Manual only. This writes signing keys to the production deployment and
+# rotating them signs every live session out, so it must never fire on a push.
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Overwrite JWT_PRIVATE_KEY and JWKS if they already exist (signs everyone out)"
+        type: boolean
+        default: false
+
+jobs:
+  init:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - name: Generate the RS256 pair and set it on the deployment
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        # The script prints a fixed status line and nothing else. Key
+        # material never reaches argv, a shell, or this log.
+        run: node scripts/initAuthKeys.mjs ${{ inputs.force && '--force' || '' }}

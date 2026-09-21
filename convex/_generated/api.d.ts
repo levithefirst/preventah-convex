@@ -13,6 +13,9 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as account from "../account.js";
+import type * as auth from "../auth.js";
+import type * as authStatus from "../authStatus.js";
 import type * as catalog from "../catalog.js";
 import type * as checkins from "../checkins.js";
 import type * as crons from "../crons.js";
@@ -29,6 +32,7 @@ import type * as lib_conditionTypes from "../lib/conditionTypes.js";
 import type * as lib_conditions from "../lib/conditions.js";
 import type * as lib_day from "../lib/day.js";
 import type * as lib_joincode from "../lib/joincode.js";
+import type * as lib_openai from "../lib/openai.js";
 import type * as lib_planContent from "../lib/planContent.js";
 import type * as lib_plans from "../lib/plans.js";
 import type * as lib_rewrite from "../lib/rewrite.js";
@@ -43,6 +47,9 @@ import type * as lib_tiers from "../lib/tiers.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  account: typeof account;
+  auth: typeof auth;
+  authStatus: typeof authStatus;
   catalog: typeof catalog;
   checkins: typeof checkins;
   crons: typeof crons;
@@ -59,6 +66,7 @@ declare const fullApi: ApiFromModules<{
   "lib/conditions": typeof lib_conditions;
   "lib/day": typeof lib_day;
   "lib/joincode": typeof lib_joincode;
+  "lib/openai": typeof lib_openai;
   "lib/planContent": typeof lib_planContent;
   "lib/plans": typeof lib_plans;
   "lib/rewrite": typeof lib_rewrite;

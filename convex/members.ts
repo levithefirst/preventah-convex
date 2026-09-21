@@ -6,6 +6,7 @@ import { withTiers } from './lib/tiers';
 import { dayIndexOf, dayKeyOf, isValidTimezone } from './lib/day';
 import { conditionName, getCondition } from './lib/conditionIndex';
 import { applyRewrite } from './lib/rewrite';
+import { getAuthUserId } from '@convex-dev/auth/server';
 
 /**
  * A member's own state: consent, selections, and what today asks of them.
@@ -113,6 +114,12 @@ const action = v.object({
  * call sits between opening the app and seeing what to do today, which is
  * why this is a query and not an action.
  *
+ * Identity: when the caller is signed in, their account decides which
+ * member this is and the id in the argument is ignored. The argument is
+ * honoured only for a browser that has never signed in, which is how the
+ * app worked before accounts existed and still works for anyone who
+ * never creates one.
+ *
  * Rewritten wording, when today's row has any, is overlaid on top of that
  * catalog plan rather than replacing it. The read path therefore never
  * depends on OpenAI having succeeded, or on it having been called at all:
@@ -142,13 +149,23 @@ export const today = query({
     }),
   ),
   handler: async (ctx, args) => {
-    const member = await ctx.db.get(args.memberId);
+    // An account outranks whatever this browser remembers.
+    const userId = await getAuthUserId(ctx);
+    const owned = userId
+      ? await ctx.db
+          .query('members')
+          .withIndex('by_user', (q) => q.eq('userId', userId))
+          .unique()
+      : null;
+
+    const member = owned ?? (userId ? null : await ctx.db.get(args.memberId));
     if (!member) return null;
+    const memberId = member._id;
 
     const dayKey = dayKeyOf();
     const done = await ctx.db
       .query('checkins')
-      .withIndex('by_member_day', (q) => q.eq('memberId', args.memberId).eq('dayKey', dayKey))
+      .withIndex('by_member_day', (q) => q.eq('memberId', memberId).eq('dayKey', dayKey))
       .collect();
     const doneByAction = new Map(done.map((row) => [row.actionId, row.tier]));
 
@@ -157,7 +174,7 @@ export const today = query({
 
     const row = await ctx.db
       .query('dailyPlans')
-      .withIndex('by_member_day', (q) => q.eq('memberId', args.memberId).eq('dayKey', dayKey))
+      .withIndex('by_member_day', (q) => q.eq('memberId', memberId).eq('dayKey', dayKey))
       .unique();
 
     const catalog = [plan.diet, plan.exercise, plan.habit].map(withTiers);

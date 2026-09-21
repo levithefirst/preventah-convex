@@ -1,5 +1,6 @@
 import { httpRouter } from 'convex/server';
 import { httpAction } from './_generated/server';
+import { auth } from './auth';
 import { INDEX_PATH, SITE_ASSETS } from './siteAssets';
 
 /**
@@ -100,5 +101,12 @@ for (const path of Object.keys(SITE_ASSETS)) {
   if (path === '/' || path.startsWith('/assets/')) continue;
   http.route({ path, method: 'GET', handler: serve });
 }
+
+/**
+ * The auth endpoints, added alongside the exact routes above rather than
+ * instead of them. They live under /api/auth/, so they cannot collide
+ * with a page path or with /assets/, and the site keeps serving itself.
+ */
+auth.addHttpRoutes(http);
 
 export default http;

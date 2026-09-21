@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
+import { authTables } from '@convex-dev/auth/server';
 
 /**
  * Preventah All Gas schema.
@@ -18,6 +19,10 @@ import { v } from 'convex/values';
  *    retried cron cannot mail the same person twice.
  */
 export default defineSchema({
+  // users, authAccounts, authSessions and the rest of the account
+  // machinery. Owned by @convex-dev/auth; this app only reads `users`.
+  ...authTables,
+
   households: defineTable({
     name: v.string(),
     /** Six characters, A-Z2-9. What a second member types to join. */
@@ -40,10 +45,20 @@ export default defineSchema({
     timezone: v.string(),
     /** Day the member joined, as a UTC day index. Anchors plan rotation. */
     startDayIndex: v.number(),
+    /**
+     * The account this member belongs to, once there is one.
+     *
+     * Optional rather than required, because members created before
+     * accounts existed have no account and must keep working. A member
+     * with no userId can be claimed once, by the first signed-in person
+     * who presents its id from their browser.
+     */
+    userId: v.optional(v.id('users')),
     createdAt: v.number(),
   })
     .index('by_household', ['householdId'])
-    .index('by_email', ['email']),
+    .index('by_email', ['email'])
+    .index('by_user', ['userId']),
 
   checkins: defineTable({
     memberId: v.id('members'),

@@ -3,6 +3,7 @@ import { v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
 import { makeJoinCode, normalizeJoinCode } from './lib/joincode';
 import { dayIndexOf, dayKeyOf, previousDayKey } from './lib/day';
+import { getAuthUserId } from '@convex-dev/auth/server';
 
 /**
  * Households: the unit the whole product works in.
@@ -54,6 +55,9 @@ export const create = mutation({
       email: null,
       timezone: 'UTC',
       startDayIndex: dayIndexOf(now),
+      // Bound to the account straight away when there is one, so there is
+      // nothing to claim later.
+      userId: (await getAuthUserId(ctx)) ?? undefined,
       createdAt: now,
     });
 
@@ -96,6 +100,7 @@ export const join = mutation({
       email: null,
       timezone: 'UTC',
       startDayIndex: dayIndexOf(now),
+      userId: (await getAuthUserId(ctx)) ?? undefined,
       createdAt: now,
     });
 

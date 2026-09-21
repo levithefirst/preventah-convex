@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '../convex/_generated/api';
-import { clearSession, loadSession, type Session } from './session';
+import type { Session } from './session';
+import { useIdentity } from './useIdentity';
 import { useDocumentMeta, useRoute } from './router';
 import { APP_ROUTES, type Route } from './site';
 import Gate from './components/Gate';
@@ -14,6 +15,7 @@ import Profile from './components/Profile';
 import Nav from './components/Nav';
 import SiteFooter from './components/SiteFooter';
 import { About, Contact, Faq, Home, NotFound, Privacy, Terms } from './components/Pages';
+import SignIn from './components/SignIn';
 import { Disclaimer, Mark } from './components/Brand';
 
 /**
@@ -29,7 +31,8 @@ const isAppRoute = (route: Route): boolean => (APP_ROUTES as readonly string[]).
 
 export default function App() {
   const [route, go] = useRoute();
-  const [session, setSession] = useState<Session | null>(() => loadSession());
+  const identity = useIdentity();
+  const { session, authed } = identity;
 
   useDocumentMeta(route);
 
@@ -38,20 +41,16 @@ export default function App() {
   // A member id that no longer resolves means a wiped deployment or a
   // stale browser. Drop it rather than showing a permanently empty app.
   useEffect(() => {
-    if (session && me === null) {
-      clearSession();
-      setSession(null);
-    }
-  }, [session, me]);
+    if (session && me === null && !authed) identity.release();
+  }, [session, me, authed, identity]);
 
   const leave = () => {
-    clearSession();
-    setSession(null);
+    identity.release();
     go('/');
   };
 
   const onboard = (next: Session) => {
-    setSession(next);
+    identity.adopt(next);
     go('/today');
   };
 
@@ -90,12 +89,19 @@ export default function App() {
   if (!session) {
     return (
       <Shell route={route} go={go} home={home} signedIn={false}>
-        {route === '/' ? <Home go={(to) => go(to)} /> : <Gate onReady={onboard} />}
+        {route === '/' ? (
+          <>
+            <Home go={(to) => go(to)} />
+            <SignIn />
+          </>
+        ) : (
+          <Gate onReady={onboard} />
+        )}
       </Shell>
     );
   }
 
-  if (me === undefined) {
+  if (identity.loading || me === undefined) {
     return (
       <Shell route={route} go={go} home={home} signedIn>
         <p className="muted">Loading.</p>
@@ -127,7 +133,7 @@ export default function App() {
       case '/mail':
         return <MailSettings me={me} />;
       case '/profile':
-        return <Profile me={me} householdId={session.householdId} onLeave={leave} />;
+        return <Profile me={me} householdId={session.householdId} onLeave={leave} authed={authed} />;
       default:
         return <Today me={me} />;
     }
