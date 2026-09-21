@@ -2,7 +2,7 @@
 
 - **Project:** Preventah All Gas
 - **Event:** Convex All Gas Hackathon
-- **What it does:** Gives a household three prevention actions a day at free, cheap and premium spend tiers, and shows every member's check-ins on a live board.
+- **What it does:** Helps a household act on the illnesses that already run in it: pick the conditions, get something concrete to do today, and everyone you live with sees that you did it.
 - **Live app:** https://qualified-hummingbird-614.convex.site
 - **Repo:** https://github.com/levithefirst/preventah-convex
 - **Frontend:** Convex static hosting
@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth (Password, plus Google when configured)
 - **AI models:** gpt-5-nano, falling back to gpt-4.1-nano then gpt-4o-mini
 - **Started:** 2026-09-19T17:58:00Z
-- **Last updated:** 2026-09-21T18:30:00Z
+- **Last updated:** 2026-09-21T18:55:00Z
 
 ## Log
 
@@ -383,3 +383,31 @@ The phone header stopped wrapping into two cramped rows: the links moved into
 a Menu, which closes on Escape and returns focus to its button like the app's
 does. Measured at 390, 768 and 1280, the header is 72px and one row at all
 three.
+
+### 2026-09-21 - working tree
+Rewrote the marketing copy and fixed the auth pages.
+
+The landing explained the product by counting to three, in three places, and
+never said what it was for. It now leads with the thing itself: prevent the
+diseases that run in your family, pick what runs in yours, do one thing today,
+your household sees it. The numbered plates and the black band are gone, along
+with their CSS, and what survives of "how it works" is one line under the
+buttons where somebody scanning will read it. The duplicate Sign in under the
+hero went too, since the header already has one. The engine still resolves eat,
+move and keep inside the app; that was never the pitch.
+
+The password field on `/signin` was genuinely broken, not just ugly. The input
+rule matched `text`, `email` and untyped inputs, so `type="password"` fell back
+to the browser's default width and rendered as a stub next to a full-width
+email box. Both are 308px at 390 and 550px at 1280 now.
+
+Every public page wears one shared header instead of a floating logo:
+`SiteHeader`, one row at any width, links folding into a Menu below 720px. The
+two links are one object in two instances, so they share size, weight,
+underline and baseline by construction rather than by coincidence; measured,
+both sit at 15px, weight 600, underlined, on the same baseline. The mint button
+is the only thing in the row allowed to look different, and it says what the
+hero's primary says.
+
+The footer is pinned with `margin-top: auto`, so a short form is followed by
+the footer rather than by a field of lavender.

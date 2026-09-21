@@ -301,6 +301,11 @@ a { color: var(--ink); text-underline-offset: 3px; }
 
 input[type='text'],
 input[type='email'],
+input[type='password'],
+input[type='search'],
+input[type='tel'],
+input[type='url'],
+input[type='number'],
 input:not([type]) {
   display: block;
   width: 100%;
@@ -406,7 +411,10 @@ input:not([type]) {
 
 /* ------------------------------------------------------------- footer */
 
-.foot { margin-top: 24px; border-top: var(--edge); padding-top: 14px; }
+/* Pushed to the bottom of the column on a short page, so a sign-in form
+   is followed by the footer rather than by a field of lavender. */
+.foot { margin-top: auto; padding-top: 28px; border-top: var(--edge); }
+.foot > :first-child { margin-top: 14px; }
 .foot p { font-size: 13px; color: var(--ink); opacity: 0.85; }
 
 /* Everything above is decoration. This turns all of it off. */
@@ -762,7 +770,10 @@ li { margin-bottom: 6px; }
   .wrap.bare > * { padding-left: 20px; padding-right: calc(20px + var(--plate)); }
 }
 
+/* Sits outside the page column, so it carries its own gutters. */
 .landHeader {
+  padding-left: 16px;
+  padding-right: calc(16px + var(--plate));
   position: sticky;
   top: 0;
   z-index: 6;
@@ -780,6 +791,10 @@ li { margin-bottom: 6px; }
 
 .landNav { display: none; }
 .landMenuButton { margin-left: auto; }
+
+@media (min-width: 640px) {
+  .landHeader { padding-left: 20px; padding-right: calc(20px + var(--plate)); }
+}
 
 @media (min-width: 720px) {
   .landMenuButton { display: none; }
@@ -845,47 +860,6 @@ li { margin-bottom: 6px; }
   .heroArt { min-height: 320px; justify-content: flex-end; }
 }
 
-.sectionTitle {
-  font-size: clamp(22px, 5vw, 30px);
-  margin: 0 0 14px;
-}
-
-/* Starts straight under the hero, not a screen later. */
-.how { padding-top: 6px; padding-bottom: 30px; }
-.howGrid { display: grid; gap: 12px; }
-@media (min-width: 760px) { .howGrid { grid-template-columns: repeat(3, 1fr); } }
-.stepNum {
-  font-family: var(--font-title);
-  font-weight: 800;
-  font-size: 28px;
-  line-height: 1;
-  margin: 0 0 4px;
-}
-
-/* The ink band: cream cards on ink, the one inverted block in the product. */
-.band {
-  background: var(--ink);
-  color: var(--cream);
-  border-top: var(--edge);
-  border-bottom: var(--edge);
-  padding-top: 28px;
-  padding-bottom: 32px;
-  margin-top: 8px;
-}
-.bandTitle { color: var(--cream); }
-.bandGrid { display: grid; gap: 12px; }
-@media (min-width: 760px) { .bandGrid { grid-template-columns: repeat(3, 1fr); } }
-.bandCard {
-  background: var(--cream);
-  color: var(--ink);
-  border: var(--edge);
-  border-radius: var(--radius);
-  padding: 16px;
-}
-.bandCard h3 { margin: 10px 0 4px; }
-.bandCard p { margin: 0; font-size: 15px; }
-.bandIcon { width: 34px; height: 34px; display: block; }
-
 /* ========================================================== onboarding */
 
 .progress { font-family: var(--font-title); font-weight: 700; font-size: 14px; margin: 6px 0 6px; }
@@ -915,3 +889,24 @@ li { margin-bottom: 6px; }
 /* The landing menu hangs from the sticky header, same parts as the app one. */
 .landMenu { top: calc(100% + 2px); }
 .landMenu a.menuItem { display: flex; align-items: center; text-decoration: none; }
+
+/* The two header links are one object in two instances: same size,
+   weight, underline and baseline. The mint button is the only thing in
+   the row allowed to look different. */
+.navLink {
+  padding: 0;
+  min-height: 0;
+  background: none;
+  border: 0;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.navLink:hover { text-decoration-thickness: 3px; }

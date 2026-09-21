@@ -14,17 +14,17 @@ export function About() {
     <>
       <h1>What Preventah is.</h1>
       <p className="lede">
-        A daily prevention habit built around the conditions that already run in your family,
-        shared with the people you live with.
+        A way for a household to act on the illnesses that already run in it, instead of waiting
+        to find out who inherited what.
       </p>
 
       <section className="window plated">
         <p className="bar cream">What it does</p>
         <p>
-          You pick conditions from a curated catalog. Those choices map to tags, and the tags
-          select three actions a day from a body of guidance drawn from the WHO, the NHS, the CDC
-          and MedlinePlus. One to eat, one to move, one to keep. Each action names its source and
-          links to it.
+          You pick the conditions from a curated catalog. Those choices map to tags, and the tags
+          select what you are shown each day from a body of guidance drawn from the WHO, the NHS,
+          the CDC and MedlinePlus. Every item names the source it came from and links to it, so
+          you can check the advice rather than take ours for it.
         </p>
         <p>
           Checking an action off writes to a shared board, so a household can see the habit

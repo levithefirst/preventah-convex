@@ -10,7 +10,7 @@
 export const ORIGIN = 'https://qualified-hummingbird-614.convex.site';
 export const REPO = 'https://github.com/levithefirst/preventah-convex';
 
-export const PURPOSE = 'Three prevention actions a day, for a household.';
+export const PURPOSE = 'Prevent the diseases that run in your family.';
 
 /**
  * No public inbox exists yet, so none is published. The Contact page is
@@ -60,9 +60,9 @@ interface Meta {
 /** Unique title and description per public route. No duplicates. */
 export const META: Record<Route, Meta> = {
   '/': {
-    title: 'Preventah — three prevention actions a day, for a household',
+    title: 'Preventah — prevent the diseases that run in your family',
     description:
-      'Pick the conditions that run in your family. Get one thing to eat, one to move and one to keep, every day. Check one off and your household sees it.',
+      'Pick the conditions that run in your family. Preventah gives you something concrete to do today, and the people you live with see that you did it.',
   },
   '/today': {
     title: "Today — Preventah",
@@ -87,7 +87,7 @@ export const META: Record<Route, Meta> = {
   '/about': {
     title: 'About Preventah — what it is, and what it is not',
     description:
-      'Preventah turns a family health history into three small prevention actions a day. It does not diagnose, predict, or replace a clinician.',
+      'Preventah helps a household act on the illnesses that already run in it. It does not diagnose, predict who gets sick, or replace a clinician.',
   },
   '/faq': {
     title: 'Questions about Preventah — consent, join codes, sources, data',

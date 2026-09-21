@@ -18,7 +18,8 @@ import { About, Contact, Faq, NotFound, Privacy, Terms } from './components/Page
 import Landing from './components/Landing';
 import Start from './components/Start';
 import SignIn from './components/SignIn';
-import { Disclaimer, Mark } from './components/Brand';
+import { Disclaimer } from './components/Brand';
+import SiteHeader from './components/SiteHeader';
 
 /**
  * The shell.
@@ -99,10 +100,17 @@ export default function App() {
     }
   })();
 
-  // Public pages render the same whether or not anyone is signed in.
+  // Public pages render the same whether or not anyone is signed in, and
+  // wear the same header as the landing rather than a floating logo.
   if (publicPage) {
     return (
-      <Shell route={route} go={go} home={home} signedIn={Boolean(session)}>
+      <Shell
+        route={route}
+        go={go}
+        home={home}
+        signedIn={Boolean(session)}
+        header={<SiteHeader go={go} authed={authed} hasHousehold={onboarded} />}
+      >
         {publicPage}
       </Shell>
     );
@@ -111,8 +119,17 @@ export default function App() {
   // The marketing home never mounts a tab, a check-in or a crawl result.
   if (route === '/') {
     return (
-      <Shell route={route} go={go} home={home} signedIn={authed} bare>
-        <Landing go={go} authed={authed} hasHousehold={onboarded} />
+      <Shell
+        route={route}
+        go={go}
+        home={home}
+        signedIn={authed}
+        bare
+        header={
+          <SiteHeader go={go} authed={authed} hasHousehold={onboarded} showHowItWorks />
+        }
+      >
+        <Landing go={go} hasHousehold={onboarded} />
       </Shell>
     );
   }
@@ -208,9 +225,10 @@ function Shell({
   route,
   go,
   home,
-  signedIn,
+  signedIn: _signedIn,
   app = false,
   bare = false,
+  header,
   children,
 }: {
   route: Route;
@@ -219,6 +237,7 @@ function Shell({
   signedIn: boolean;
   app?: boolean;
   bare?: boolean;
+  header?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -226,20 +245,8 @@ function Shell({
       <a className="skip" href="#main">
         Skip to content
       </a>
-      {!app && !bare && (
-        <header className="chrome">
-          <button className="home" onClick={() => go(home)} aria-label="Preventah, go home">
-            <Mark />
-            <span className="wordmark">Preventah</span>
-          </button>
-          {!signedIn && route !== '/' && (
-            <button className="btn" onClick={() => go('/')}>
-              Home
-            </button>
-          )}
-        </header>
-      )}
-      <main className={app ? 'wrap wide' : bare ? 'wrap bare' : 'wrap'} id="main">
+      {!app && header}
+      <main className={app ? 'wrap wide' : bare ? 'wrap bare' : 'wrap sitePage'} id="main">
         {children}
         {!app && <SiteFooter go={go} />}
       </main>

@@ -1,8 +1,8 @@
 # Preventah All Gas
 
-> Three prevention actions a day, for a household. Pick the conditions a
-> family history is relevant to, and get one thing to eat, one to move and
-> one to keep, each carrying the public-health source it came from.
+> Helps a household act on the illnesses that already run in it. Pick the
+> conditions a family history is relevant to, and get something concrete to
+> do today, each item carrying the public-health source it came from.
 
 Live: https://qualified-hummingbird-614.convex.site
 Source: https://github.com/levithefirst/preventah-convex
