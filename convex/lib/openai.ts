@@ -25,13 +25,13 @@ const TIMEOUT_MS = 20_000;
 
 const SYSTEM = [
   'You tighten the wording of general prevention actions. You are not a clinician.',
-  'Rewrite only the title, the one-line how, and each tier title.',
-  'Keep every id and tier name exactly as given. Return all of them.',
+  'Rewrite only the title and the one-line how.',
+  'Keep every id exactly as given. Return all of them.',
   'Never mention a drug, a dose, a supplement as treatment, a lab test or a measurement the input did not contain.',
   'Never write "you have", "you will develop", "diagnose", "treat" or "cure".',
   'Never add a URL.',
   'Keep each string shorter than the one it replaces where you can. Plain, direct, imperative.',
-  'Reply with JSON only: {"actions":[{"id":"","title":"","oneLiner":"","tiers":[{"tier":"","title":""}]}]}',
+  'Reply with JSON only: {"actions":[{"id":"","title":"","oneLiner":""}]}',
 ].join(' ');
 
 export interface CallOutcome {

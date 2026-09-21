@@ -26,7 +26,7 @@ export default function Consent({ memberId }: { memberId: Id<'members'> }) {
 
       <h1>Before you pick anything.</h1>
 
-      <section className="window plated">
+      <section className="window plated roomy">
         <p className="bar ink">What you are agreeing to</p>
 
         {copy === undefined ? (
@@ -64,7 +64,7 @@ export default function Consent({ memberId }: { memberId: Id<'members'> }) {
         </button>
       </section>
 
-      <p className="tiny">
+      <p className="tiny pinBottom">
         You can withdraw this at any time. Withdrawing clears the conditions you picked rather
         than keeping them warm for later.
       </p>

@@ -5,11 +5,12 @@ import type { Action, Me } from '../types';
 import Sources from './Sources';
 
 /**
- * Today: three windows, three tiers each, one tap to check in.
+ * Today: one thing to eat, one to move, one to keep.
  *
- * The mint bar says this is a habit day. Done is mint and not-done is
- * cream, which is the whole status vocabulary: there is no red for a
- * missed action, because a missed action is not an error.
+ * Each action is a single cream window with a single control. There is no
+ * price on this screen and nothing to choose between: the decision is
+ * whether you did it, not what you were willing to spend. Done is mint,
+ * not done is cream, and that is the entire status vocabulary.
  */
 export default function Today({ me }: { me: Me }) {
   return (
@@ -58,84 +59,53 @@ function Wording({ me }: { me: Me }) {
   }, [needsGenerating, me.memberId, me.dayKey, generate]);
 
   const label =
-    me.rewrite === 'openai'
-      ? 'Wording tightened · sources unchanged'
-      : 'Catalog wording';
+    me.rewrite === 'openai' ? 'Wording tightened · sources unchanged' : 'Catalog wording';
 
   return (
     <p className="tiny">
       {busy && me.rewrite === null ? 'Tightening wording…' : label}
       {me.rewrite === 'openai' && me.model ? ` · ${me.model}` : ''}{' '}
-      <button className="link" disabled={busy} onClick={() => {
-        setBusy(true);
-        void generate({ memberId: me.memberId }).finally(() => setBusy(false));
-      }}>
+      <button
+        className="link"
+        disabled={busy}
+        onClick={() => {
+          setBusy(true);
+          void generate({ memberId: me.memberId }).finally(() => setBusy(false));
+        }}
+      >
         Refresh wording
       </button>
     </p>
   );
 }
 
-const BAR: Record<string, string> = {
-  diet: 'Eat',
-  exercise: 'Move',
-  habit: 'Habit',
-};
+const BAR: Record<string, string> = { diet: 'Eat', exercise: 'Move', habit: 'Keep' };
+
+/**
+ * The check-in still writes the `tier` column the table has always had,
+ * because changing a column to remove something the UI stopped showing
+ * would be a migration for no one's benefit. It writes the default and
+ * never reads it back.
+ */
+const DEFAULT_TIER = 'free';
 
 function ActionCard({ action, me, plated }: { action: Action; me: Me; plated: boolean }) {
   const check = useMutation(api.checkins.check);
   const undo = useMutation(api.checkins.undo);
   const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const detailId = `detail-${action.id}`;
 
   return (
     <article className={plated ? 'window plated' : 'window'}>
-      <p className="bar mint">{BAR[action.type] ?? action.type}</p>
+      <p className={action.done ? 'bar mint' : 'bar cream'}>{BAR[action.type] ?? action.type}</p>
 
       <h2>{action.title}</h2>
       <p>{action.description}</p>
 
       {action.safetyNote && <p className="safety">{action.safetyNote}</p>}
 
-      <div className="tiers">
-        {action.options.map((option) => (
-          <button
-            key={option.tier}
-            className="tier"
-            aria-pressed={action.doneTier === option.tier}
-            onClick={() => {
-              setError(null);
-              void check({ memberId: me.memberId, actionId: action.id, tier: option.tier }).then(
-                (result) => {
-                  if (!result.ok) setError(result.reason);
-                },
-              );
-            }}
-          >
-            <span className="tierLabel">{option.label}</span>
-            <span className="tierTitle">{option.title}</span>
-            <span className="tierCost">{option.costHint}</span>
-          </button>
-        ))}
-      </div>
-
-      {error && <p className="alert">{error}</p>}
-
-      {action.doneTier && (
-        <p className="muted">
-          Done today at the {action.doneTier} tier.{' '}
-          <button
-            className="link"
-            onClick={() => void undo({ memberId: me.memberId, actionId: action.id })}
-          >
-            Undo
-          </button>
-        </p>
-      )}
-
-      {/* The source is readable without opening anything. A citation you
-          have to go looking for is not really a citation. */}
       <p className="sourceLine">
         Source:{' '}
         <a href={action.sourceUrl} target="_blank" rel="noreferrer">
@@ -146,7 +116,36 @@ function ActionCard({ action, me, plated }: { action: Action; me: Me; plated: bo
           : ' · general prevention'}
       </p>
 
-      <button className="link" aria-expanded={open} aria-controls={detailId} onClick={() => setOpen(!open)}>
+      <button
+        className={action.done ? 'btn done block' : 'btn block'}
+        aria-pressed={action.done}
+        disabled={busy}
+        onClick={() => {
+          setError(null);
+          setBusy(true);
+          const call = action.done
+            ? undo({ memberId: me.memberId, actionId: action.id }).then(() => undefined)
+            : check({
+                memberId: me.memberId,
+                actionId: action.id,
+                tier: DEFAULT_TIER,
+              }).then((result) => {
+                if (!result.ok) setError(result.reason);
+              });
+          void call.finally(() => setBusy(false));
+        }}
+      >
+        {action.done ? '✓ Done today · undo' : 'I did this'}
+      </button>
+
+      {error && <p className="alert">{error}</p>}
+
+      <button
+        className="link"
+        aria-expanded={open}
+        aria-controls={detailId}
+        onClick={() => setOpen(!open)}
+      >
         {open ? 'Hide why and how' : 'Why this, and how'}
       </button>
 

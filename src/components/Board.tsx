@@ -57,9 +57,6 @@ export default function Board({ householdId }: { householdId: Id<'households'> }
                   ? `${member.conditionCount} condition${member.conditionCount === 1 ? '' : 's'} tracked`
                   : 'Has not consented yet'}
               </p>
-              {member.tiersToday.length > 0 && (
-                <p className="muted">Tiers today: {member.tiersToday.join(', ')}</p>
-              )}
             </div>
             <p className="score">
               <span className="big">{member.doneToday}/3</span>

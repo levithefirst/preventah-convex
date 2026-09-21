@@ -52,8 +52,8 @@ export default function App() {
   };
 
   return (
-    <main className="wrap">
-      <div className="chrome">
+    <main className="wrap wide">
+      <div className="chrome sticky">
         <Mark />
         <span className="wordmark">Preventah</span>
         <p className="chromeMeta">

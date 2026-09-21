@@ -87,13 +87,6 @@ export const setProfile = mutation({
   },
 });
 
-const tierOption = v.object({
-  tier: v.string(),
-  label: v.string(),
-  title: v.string(),
-  costHint: v.string(),
-});
-
 const action = v.object({
   id: v.string(),
   type: v.string(),
@@ -108,8 +101,8 @@ const action = v.object({
   matchedTags: v.array(v.string()),
   sourceName: v.string(),
   sourceUrl: v.string(),
-  options: v.array(tierOption),
-  doneTier: v.union(v.string(), v.null()),
+  /** Whether this action is already checked off today. */
+  done: v.boolean(),
 });
 
 /**
@@ -173,9 +166,12 @@ export const today = query({
         ? applyRewrite(catalog, row.actions)
         : catalog;
 
-    const actions = resolved.map((item) => ({
+    // The spend tiers are resolved internally and deliberately not
+    // returned: an action is one thing to do, and the UI has no way to
+    // render a price even by accident.
+    const actions = resolved.map(({ options: _options, ...item }) => ({
       ...item,
-      doneTier: doneByAction.get(item.id) ?? null,
+      done: doneByAction.has(item.id),
     }));
 
     return {

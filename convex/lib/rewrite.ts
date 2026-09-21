@@ -5,9 +5,9 @@ import type { TieredAction } from './tiers';
  * deployment or a key.
  *
  * What OpenAI is allowed to do here is narrow on purpose: it may reword a
- * title, the one-line how, and the three tier titles. It may not touch an
- * id, a type, a source, a how-to list, a safety note or a cost, because
- * those are the parts a reader might act on. Nothing it returns can
+ * title and the one-line how. It may not touch an id, a type, a source,
+ * a how-to list or a safety note, because those are the parts a reader
+ * might act on. Nothing it returns can
  * become the only copy of anything: if validation rejects the response,
  * the catalog plan renders unchanged.
  *
@@ -30,20 +30,19 @@ export interface RewritePayloadAction {
   title: string;
   how: string;
   sourceName: string;
-  tiers: { tier: string; title: string }[];
 }
 
 export interface RewrittenAction {
   id: string;
   title: string;
   oneLiner: string;
-  tiers: { tier: string; title: string }[];
 }
 
 /**
  * The prompt payload: three actions, one line of how each, and the source
  * names so the model knows the copy is sourced. Deliberately small; the
- * 117-entry catalog never leaves the deployment.
+ * 117-entry catalog never leaves the deployment, and since the spend
+ * tiers stopped rendering there is nothing else to send either.
  */
 export function buildPayload(actions: TieredAction[]): RewritePayloadAction[] {
   return actions.map((action) => ({
@@ -52,7 +51,6 @@ export function buildPayload(actions: TieredAction[]): RewritePayloadAction[] {
     title: action.title,
     how: action.howTo[0] ?? action.description,
     sourceName: action.sourceName,
-    tiers: action.options.map((option) => ({ tier: option.tier, title: option.title })),
   }));
 }
 
@@ -181,12 +179,7 @@ export function validateRewrite(parsed: unknown, catalog: TieredAction[]): Valid
   const seen = new Set<string>();
 
   for (const raw of root.actions) {
-    const item = raw as {
-      id?: unknown;
-      title?: unknown;
-      oneLiner?: unknown;
-      tiers?: unknown;
-    };
+    const item = raw as { id?: unknown; title?: unknown; oneLiner?: unknown };
 
     if (typeof item.id !== 'string' || !byId.has(item.id)) {
       return reject(`unknown action id: ${String(item.id)}`);
@@ -206,47 +199,15 @@ export function validateRewrite(parsed: unknown, catalog: TieredAction[]): Valid
     if (item.title.length > MAX_TITLE || item.oneLiner.length > MAX_ONE_LINER) {
       return reject(`action ${item.id} exceeds the length budget`);
     }
-    if (!Array.isArray(item.tiers) || item.tiers.length !== source.options.length) {
-      return reject(`action ${item.id} does not have ${source.options.length} tiers`);
-    }
 
+    // The content gate. Both strings the model is allowed to write go
+    // through it; a violation in either rejects the whole response.
     const titleViolation = checkString(item.title, corpus, allowedUrls, item.id, 'title');
     if (titleViolation) violations.push(titleViolation);
     const oneLinerViolation = checkString(item.oneLiner, corpus, allowedUrls, item.id, 'oneLiner');
     if (oneLinerViolation) violations.push(oneLinerViolation);
 
-    const tiers: { tier: string; title: string }[] = [];
-    for (let i = 0; i < source.options.length; i += 1) {
-      const option = source.options[i];
-      const incoming = item.tiers[i] as { tier?: unknown; title?: unknown };
-      // Tier order is fixed by the catalog, so a reordered response is a
-      // rejection rather than something to sort out.
-      if (incoming?.tier !== option.tier) {
-        return reject(`action ${item.id} tier ${i} is not ${option.tier}`);
-      }
-      if (typeof incoming.title !== 'string' || incoming.title.trim().length === 0) {
-        return reject(`action ${item.id} tier ${option.tier} has no title`);
-      }
-      if (incoming.title.length > MAX_TITLE) {
-        return reject(`action ${item.id} tier ${option.tier} exceeds the length budget`);
-      }
-      const tierViolation = checkString(
-        incoming.title,
-        corpus,
-        allowedUrls,
-        item.id,
-        `tier:${option.tier}`,
-      );
-      if (tierViolation) violations.push(tierViolation);
-      tiers.push({ tier: option.tier, title: incoming.title.trim() });
-    }
-
-    actions.push({
-      id: item.id,
-      title: item.title.trim(),
-      oneLiner: item.oneLiner.trim(),
-      tiers,
-    });
+    actions.push({ id: item.id, title: item.title.trim(), oneLiner: item.oneLiner.trim() });
   }
 
   return { ok: violations.length === 0, violations, actions };
@@ -255,9 +216,10 @@ export function validateRewrite(parsed: unknown, catalog: TieredAction[]): Valid
 /**
  * Overlays validated rewrites onto the catalog plan.
  *
- * Only four strings per action move. Ids, types, how-to lists, safety
- * notes, costs, sources and tier identities are taken from the catalog
- * every time, so a rewrite cannot quietly drop a citation or a warning.
+ * Two strings per action move: the title and the one-line how. Ids,
+ * types, how-to lists, safety notes, targets and sources are taken from
+ * the catalog every time, so a rewrite cannot quietly drop a citation or
+ * a warning.
  */
 export function applyRewrite(
   catalog: TieredAction[],
@@ -267,15 +229,6 @@ export function applyRewrite(
   return catalog.map((action) => {
     const replacement = byId.get(action.id);
     if (!replacement) return action;
-    const tierTitles = new Map(replacement.tiers.map((tier) => [tier.tier, tier.title]));
-    return {
-      ...action,
-      title: replacement.title,
-      description: replacement.oneLiner,
-      options: action.options.map((option) => ({
-        ...option,
-        title: tierTitles.get(option.tier) ?? option.title,
-      })),
-    };
+    return { ...action, title: replacement.title, description: replacement.oneLiner };
   });
 }

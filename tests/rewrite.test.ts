@@ -20,14 +20,13 @@ function catalogPlan(): TieredAction[] {
   return [plan.diet, plan.exercise, plan.habit].map(withTiers);
 }
 
-/** A faithful response: same ids, same tier order, plain wording. */
+/** A faithful response: same ids, plain wording, no prices. */
 function goodResponse(catalog: TieredAction[]) {
   return {
     actions: catalog.map((action) => ({
       id: action.id,
       title: 'Do the thing today.',
       oneLiner: 'A short, plain line about doing the thing.',
-      tiers: action.options.map((option) => ({ tier: option.tier, title: `Option ${option.tier}.` })),
     })),
   };
 }
@@ -61,16 +60,37 @@ test('an unknown or duplicated action id is rejected', () => {
   assert.equal(validateRewrite(duped, catalog).ok, false);
 });
 
-test('reordered or missing tiers are rejected', () => {
+test('the model is never asked for a price, and a stray one is ignored', () => {
   const catalog = catalogPlan();
 
-  const reordered = goodResponse(catalog);
-  reordered.actions[0].tiers.reverse();
-  assert.equal(validateRewrite(reordered, catalog).ok, false);
+  // Nothing about cost leaves the deployment.
+  const payload = JSON.stringify(buildPayload(catalog));
+  for (const word of ['tier', 'free', 'cheap', 'premium', 'cost', 'costHint']) {
+    assert.ok(!payload.toLowerCase().includes(word), `payload mentions ${word}`);
+  }
 
-  const short = goodResponse(catalog);
-  short.actions[0].tiers.pop();
-  assert.equal(validateRewrite(short, catalog).ok, false);
+  // An older model reply that still volunteers tiers is accepted on its
+  // title and one-liner alone; the extra key is simply not read.
+  const withStrayTiers = {
+    actions: goodResponse(catalog).actions.map((action) => ({
+      ...action,
+      tiers: [{ tier: 'free', title: 'Spend nothing.' }],
+    })),
+  };
+  const result = validateRewrite(withStrayTiers, catalog);
+  assert.equal(result.ok, true, JSON.stringify(result.violations));
+  for (const action of result.actions) {
+    assert.ok(!('tiers' in action), 'a tier survived validation');
+  }
+});
+
+test('applying a rewrite leaves the resolver\u2019s tier data untouched', () => {
+  const catalog = catalogPlan();
+  const result = validateRewrite(goodResponse(catalog), catalog);
+  const applied = applyRewrite(catalog, result.actions);
+  for (let i = 0; i < catalog.length; i += 1) {
+    assert.deepEqual(applied[i].options, catalog[i].options, 'a rewrite reached the tiers');
+  }
 });
 
 test('runaway length is rejected', () => {
@@ -176,14 +196,41 @@ test('applying a rewrite moves wording only, never sources or safety', () => {
     assert.equal(after.sourceName, before.sourceName, 'source name moved');
     assert.equal(after.safetyNote, before.safetyNote, 'safety note moved');
     assert.deepEqual(after.howTo, before.howTo, 'how-to moved');
-    assert.deepEqual(
-      after.options.map((option) => option.costHint),
-      before.options.map((option) => option.costHint),
-      'cost hint moved',
-    );
     assert.equal(after.title, 'Do the thing today.');
     assert.equal(after.options[0].tier, 'free');
   }
+});
+
+test('no budget copy survives on any user-facing surface', () => {
+  // The three plates were an earlier idea. This is the guard that stops
+  // them creeping back into a screen or an email.
+  const roots = [new URL('../src', import.meta.url).pathname];
+  const banned = /\b(cheap|premium|costHint|three budgets|at three budgets)\b/i;
+  const offenders: string[] = [];
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      if (statSync(full).isDirectory()) walk(full);
+      else if (/\.(ts|tsx|css|html)$/.test(entry)) {
+        readFileSync(full, 'utf8').split('\n').forEach((line, i) => {
+          if (banned.test(line)) offenders.push(`${full}:${i + 1} ${line.trim()}`);
+        });
+      }
+    }
+  };
+  roots.forEach(walk);
+  assert.deepEqual(offenders, []);
+});
+
+test('the morning email offers actions rather than price options', () => {
+  const source = readFileSync(new URL('../convex/mail.ts', import.meta.url), 'utf8');
+  assert.ok(!/option\.costHint|option\.label|item\.options/.test(source), 'mail still writes tiers');
+});
+
+test('the server drops the tier options before the plan reaches a client', () => {
+  const source = readFileSync(new URL('../convex/members.ts', import.meta.url), 'utf8');
+  assert.match(source, /options: _options/, 'members.today no longer strips options');
+  assert.ok(!/v\.array\(tierOption\)/.test(source), 'the today payload still declares tiers');
 });
 
 test('the prompt payload never carries the catalog or a condition list', () => {

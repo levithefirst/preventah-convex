@@ -160,15 +160,14 @@ function morningBody(name: string, conditionIds: string[], dayIndex: number): Se
   const lines: string[] = [
     `Morning ${name}.`,
     '',
-    'Three things today. Each one has a free option that is a real option.',
+    'Three things today. One to eat, one to move, one to keep.',
     '',
   ];
 
   for (const item of actions) {
     lines.push(`${item.type.toUpperCase()}: ${item.title}`);
-    for (const option of item.options) {
-      lines.push(`  - ${option.label} (${option.costHint}): ${option.title}`);
-    }
+    lines.push(`  ${item.description}`);
+    if (item.safetyNote) lines.push(`  Note: ${item.safetyNote}`);
     if (item.relatedConditions.length > 0) {
       lines.push(`  Connects to: ${item.relatedConditions.join(', ')}`);
     }
@@ -242,7 +241,7 @@ export const sendNudge = internalAction({
       `${args.name}, yesterday went by without a check-in.`,
       '',
       'That is genuinely fine. The point of this is the next day, not the last one.',
-      'Today has three fresh actions waiting, and the free one is always a real option.',
+      'Today has three fresh actions waiting: one to eat, one to move, one to keep.',
       '',
       'Open the app and check one off. Your household will see it.',
     ].join('\n');

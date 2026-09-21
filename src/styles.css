@@ -12,8 +12,23 @@
  * is cream. There is no red anywhere except a genuine input error.
  */
 
-@font-face { font-display: swap; font-family: 'Bricolage Grotesque'; src: local('Bricolage Grotesque'); }
-@font-face { font-display: swap; font-family: 'Plus Jakarta Sans'; src: local('Plus Jakarta Sans'); }
+/* Self-hosted, same origin as the app. No runtime call to a font CDN, so
+   nothing blocks first paint on a third party. Both are variable fonts,
+   which is why one file covers the whole weight range. */
+@font-face {
+  font-family: 'Outfit';
+  src: url('/fonts/outfit.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Figtree';
+  src: url('/fonts/figtree.woff2') format('woff2');
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   --canvas: #c9b6ea;
@@ -31,9 +46,8 @@
   --radius: 14px;
   --plate: 6px;
 
-  /* Named so vendoring the real files later is one @font-face away. */
-  --font-title: 'Bricolage Grotesque', 'Avenir Next', 'Segoe UI', Roboto, system-ui, sans-serif;
-  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-title: 'Outfit', 'Avenir Next', 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   --press: 80ms;
   --fill: 120ms;
@@ -84,12 +98,35 @@ a { color: var(--ink); text-underline-offset: 3px; }
 
 /* ------------------------------------------------------------ layout */
 
+/**
+ * The page fills the viewport rather than floating a short card in the
+ * top third. Below 900px the column simply uses the width it has, so a
+ * phone gets near edge-to-edge windows instead of a postage stamp; above
+ * it the column is capped and centred.
+ */
 .wrap {
-  max-width: 680px;
+  width: 100%;
   margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   /* The right gutter carries the plate offset so it is never clipped. */
-  padding: 20px calc(16px + var(--plate)) 40px 16px;
+  padding: 16px calc(16px + var(--plate)) 32px 16px;
 }
+
+@media (min-width: 640px) {
+  .wrap { padding: 20px calc(20px + var(--plate)) 40px 20px; }
+}
+
+@media (min-width: 900px) {
+  /* Forms read better narrow; the four tabs get a little more room. */
+  .wrap { max-width: 40rem; }
+  .wrap.wide { max-width: 48rem; }
+}
+
+/* Gate and Consent only: the disclaimer sits at the foot of the viewport
+   rather than leaving a band of dead canvas under a short form. */
+.wrap .pinBottom { margin-top: auto; padding-top: 24px; }
 
 .stack > * + * { margin-top: 14px; }
 
@@ -101,6 +138,24 @@ a { color: var(--ink); text-underline-offset: 3px; }
   gap: 10px;
   margin-bottom: 14px;
   flex-wrap: wrap;
+}
+
+/* Signed-in screens keep the mark and the day in view while the list
+   scrolls. The canvas background is required, or content shows through. */
+.chrome.sticky {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--canvas);
+  margin: -16px calc(-16px - var(--plate)) 14px -16px;
+  padding: 12px calc(16px + var(--plate)) 10px 16px;
+  border-bottom: var(--edge);
+}
+@media (min-width: 640px) {
+  .chrome.sticky {
+    margin: -20px calc(-20px - var(--plate)) 14px -20px;
+    padding: 14px calc(20px + var(--plate)) 12px 20px;
+  }
 }
 
 .mark {
@@ -167,6 +222,14 @@ a { color: var(--ink); text-underline-offset: 3px; }
   border-radius: var(--radius);
   padding: 16px;
 }
+
+/* The Gate's form. Comfortable rather than compact: it is the only thing
+   on the screen, so it should look like it. */
+.window.roomy { padding: 20px; }
+.window.roomy .bar { margin: -20px -20px 16px; padding: 11px 20px; }
+.window.roomy .field { margin: 16px 0; }
+.window.roomy input { min-height: 52px; }
+.window.roomy .btn { min-height: 52px; margin-top: 4px; }
 
 /* Depth is an offset plate, never a blur under the panel. Two zero-blur
    shadows: blush first, then ink spread behind it for the plate's edge.
@@ -301,34 +364,12 @@ input:not([type]) {
 .chip:active { transform: translateY(1px); }
 .chip[aria-pressed='true'] { background: var(--ink); color: var(--cream); }
 
-/* -------------------------------------------------------------- tiers */
-
-.tiers { display: grid; gap: 10px; margin: 14px 0 10px; }
-@media (min-width: 560px) { .tiers { grid-template-columns: repeat(3, 1fr); } }
-
-.tier {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-height: 44px;
-  padding: 12px;
-  text-align: left;
-  border: var(--edge);
-  border-radius: 10px;
-  background: #fffdf8;
-  color: var(--ink);
-  font: inherit;
-  cursor: pointer;
-  transition: background-color var(--fill) ease, transform var(--press) ease;
-}
-.tier:hover { background: #fff; }
-.tier:active { transform: translate(1px, 1px); }
-/* Done is mint. Not done is cream. Never a green tick on a red field. */
-.tier[aria-pressed='true'] { background: var(--mint); }
-
-.tierLabel { font-family: var(--font-title); font-weight: 800; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; }
-.tierTitle { font-size: 15px; }
-.tierCost { font-size: 13px; color: var(--ink-soft); }
+/* The three budget plates were removed from every screen. One action, one
+   control, and mint means exactly one thing on it: done. An unchecked
+   action is a cream button with the same ink edge as everything else, so
+   the colour carries the state rather than the affordance. */
+.btn.done { background: var(--mint); }
+.btn.done:hover { background: #c6e2cf; }
 
 /* --------------------------------------------------------- disclosure */
 

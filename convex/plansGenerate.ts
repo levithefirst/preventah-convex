@@ -23,12 +23,7 @@ import { callOpenAI } from './lib/openai';
  * associated with a member, and every action keeps its own source.
  */
 
-const storedAction = v.object({
-  id: v.string(),
-  title: v.string(),
-  oneLiner: v.string(),
-  tiers: v.array(v.object({ tier: v.string(), title: v.string() })),
-});
+const storedAction = v.object({ id: v.string(), title: v.string(), oneLiner: v.string() });
 
 /** The day's row, or null when today has not been generated yet. */
 export const rowFor = internalQuery({

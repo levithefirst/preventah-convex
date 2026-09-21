@@ -4,11 +4,12 @@ import type { PlanTag } from './conditionTypes';
 /**
  * Spend tiers for a daily action.
  *
- * The premise: the same prevention action is available at three budgets,
- * and the free one is always a real option rather than a teaser. Someone
- * who never spends a penny still completes the loop every day. The paid
- * tiers buy convenience or equipment, never a different outcome, and the
- * copy is not allowed to imply otherwise.
+ * Retained for the resolver's shape and for the tests that pin it. The
+ * three budgets were an earlier idea and no longer reach any screen,
+ * any email or the model: an action is one thing to do, and the decision
+ * is whether you did it rather than what you were willing to spend.
+ * Nothing here renders. See convex/members.ts, which drops `options`
+ * before the plan leaves the server.
  *
  * Tiers are derived, not stored. A tier is a pure function of the plan
  * item, so the server and the browser resolve the same three options for

@@ -114,7 +114,6 @@ const boardMember = v.object({
   consented: v.boolean(),
   conditionCount: v.number(),
   doneToday: v.number(),
-  tiersToday: v.array(v.string()),
   lastCheckinAt: v.union(v.number(), v.null()),
   streak: v.number(),
 });
@@ -163,7 +162,6 @@ export const board = query({
         consented: member.consentedAt !== null,
         conditionCount: member.conditionIds.length,
         doneToday: mine.length,
-        tiersToday: mine.map((row) => row.tier),
         lastCheckinAt: mine.length > 0 ? Math.max(...mine.map((row) => row.at)) : null,
         streak: 0,
       };

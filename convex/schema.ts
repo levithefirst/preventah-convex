@@ -89,12 +89,7 @@ export default defineSchema({
     model: v.union(v.string(), v.null()),
     /** Empty when rewrite is 'catalog'. Overlaid on the catalog plan when not. */
     actions: v.array(
-      v.object({
-        id: v.string(),
-        title: v.string(),
-        oneLiner: v.string(),
-        tiers: v.array(v.object({ tier: v.string(), title: v.string() })),
-      }),
+      v.object({ id: v.string(), title: v.string(), oneLiner: v.string() }),
     ),
     /** Why it fell back, for the dashboard. Never a key or a response body. */
     detail: v.union(v.string(), v.null()),

@@ -60,7 +60,7 @@ export default function Gate({ onReady }: { onReady: (session: Session) => void 
 
         <h1>Your household is open.</h1>
 
-        <section className="window plated">
+        <section className="window plated roomy">
           <p className="bar mint">Join code</p>
           <p className="code">{created.joinCode}</p>
           <div className="codeRow">
@@ -76,7 +76,7 @@ export default function Gate({ onReady }: { onReady: (session: Session) => void 
           Continue
         </button>
 
-        <p className="tiny">
+        <p className="tiny pinBottom">
           General lifestyle guidance from public-health sources. Not medical advice.
         </p>
       </main>
@@ -90,10 +90,10 @@ export default function Gate({ onReady }: { onReady: (session: Session) => void 
         <span className="wordmark">Preventah</span>
       </div>
 
-      <h1>Three prevention actions a day, at three budgets, for a household.</h1>
+      <h1>Three prevention actions a day, for a household.</h1>
       <p className="lede">
-        Pick the conditions that run in your family. Get three things to do today, each one
-        available free. Check one off and the rest of the house sees it.
+        Pick the conditions that run in your family. Get one thing to eat, one to move and one to
+        keep. Check one off and the rest of the house sees it.
       </p>
 
       <div className="tabs" role="group" aria-label="Start or join">
@@ -113,7 +113,7 @@ export default function Gate({ onReady }: { onReady: (session: Session) => void 
         </button>
       </div>
 
-      <section className="window plated">
+      <section className="window plated roomy">
         <p className="bar cream">{mode === 'create' ? 'New household' : 'Join a household'}</p>
 
         {mode === 'create' ? (
@@ -160,9 +160,10 @@ export default function Gate({ onReady }: { onReady: (session: Session) => void 
         </button>
       </section>
 
-      <p className="tiny">
+      <p className="tiny pinBottom">
         No account, no password. A code in the browser is all that keeps you signed in, which is
-        enough for a kitchen table and is not a security boundary.
+        enough for a kitchen table and is not a security boundary. General lifestyle guidance
+        from public-health sources, not medical advice.
       </p>
     </main>
   );

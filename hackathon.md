@@ -12,7 +12,7 @@
 - **Auth:** none
 - **AI models:** gpt-5-nano, falling back to gpt-4.1-nano then gpt-4o-mini
 - **Started:** 2026-09-19T17:58:00Z
-- **Last updated:** 2026-09-20T18:48:00Z
+- **Last updated:** 2026-09-21T03:05:00Z
 
 ## Log
 
@@ -160,3 +160,41 @@ plate was painting over its own panel because the positioned pseudo-element
 made a stacking context, now two zero-blur shadows; and a shared `capitalize`
 rule was title-casing the Gate into "Start A Household". Motion is CSS only,
 80/120/200ms, and `prefers-reduced-motion: reduce` turns all of it off.
+
+### 2026-09-21 - working tree
+Removed the three spend tiers from the product. They were an earlier idea and
+they were making the decision the wrong one: an action is one thing to do, and
+the question is whether you did it, not what you were willing to spend on it.
+Today is now one cream window per action with a single control, mint means
+exactly one thing on it, which is done, and the type bar reads eat / move /
+keep.
+
+The tiers are gone from every surface, not hidden. `members.today` drops
+`options` before the plan leaves the server, so no client can render a price
+even by accident; the board row no longer lists them; the morning email offers
+the action and its source instead of nine priced lines; and the model is no
+longer asked for tier titles, only a title and a one-line how. The resolver in
+`convex/lib/tiers.ts` stays for the tests that pin its shape. Check-ins still
+write the `tier` column the table has always had, with the default value and
+never read back, because migrating a column to drop something the UI stopped
+showing would be work for nobody.
+
+Fonts are vendored rather than fetched: Outfit for titles and Figtree for body,
+both variable woff2 under `public/fonts/`, served from the deployment's own
+origin with `font-display: swap`. They needed no route change, because
+`convex/http.ts` already registers an exact route for every embedded asset.
+
+The Gate stopped being a stamp on a purple field. The page fills the viewport,
+phones get near edge-to-edge windows instead of a narrow column, desktop caps
+at 40rem for forms and 48rem for the tabs, and the disclaimer sits at the foot
+of the viewport rather than leaving a dead band. Chrome is sticky on the
+signed-in screens.
+
+Verified by rendering at 390 and 1280: no horizontal scroll at either, content
+fills the viewport, every tap target at least 44px, both vendored families
+resolving, and no budget word anywhere in the rendered text. 44 tests pass.
+Updating them caught a bad edit of my own: removing the tier block from
+`validateRewrite` had taken the title and one-liner content checks with it,
+which would have shipped a rewrite layer with its safety gate silently
+removed. The tests failed on invented drugs and diagnosis wording, which is
+precisely what they are for.
