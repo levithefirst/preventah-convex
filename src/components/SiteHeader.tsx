@@ -97,9 +97,14 @@ export default function SiteHeader({
             </button>
           </>
         ) : (
-          <button className="navLink" onClick={() => go('/signin')}>
-            Sign in
-          </button>
+          <>
+            <button className="navLink" onClick={() => go('/signin')}>
+              Sign in
+            </button>
+            <button className="navLink" onClick={() => go('/signup')}>
+              Sign up
+            </button>
+          </>
         )}
         <button className="btn primary" onClick={() => go(primaryTo)}>
           {primaryLabel}
@@ -130,17 +135,39 @@ export default function SiteHeader({
               </button>
             </>
           ) : (
-            <button
-              className="menuItem"
-              role="menuitem"
-              onClick={() => {
-                close();
-                go('/signin');
-              }}
-            >
-              Sign in
-            </button>
+            <>
+              <button
+                className="menuItem"
+                role="menuitem"
+                onClick={() => {
+                  close();
+                  go('/signin');
+                }}
+              >
+                Sign in
+              </button>
+              <button
+                className="menuItem"
+                role="menuitem"
+                onClick={() => {
+                  close();
+                  go('/signup');
+                }}
+              >
+                Sign up
+              </button>
+            </>
           )}
+          <button
+            className="menuItem"
+            role="menuitem"
+            onClick={() => {
+              close();
+              go('/about');
+            }}
+          >
+            What this is
+          </button>
           <button
             className="menuItem"
             role="menuitem"

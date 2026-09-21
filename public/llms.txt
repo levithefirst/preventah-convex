@@ -20,7 +20,7 @@ conversation with one; it does not mean anyone will develop a condition.
 
 - /            the purpose, and how it works
 - /about       what it is and, more usefully, what it is not
-- /faq         consent, join codes, sources, email, solo use, data
+- /faq         consent, invites, sources, email, solo use, data
 - /privacy     every field stored, written from the schema
 - /terms       hackathon project, no warranty, acceptable use
 - /contact     no office, no phone; the repository is the way in
@@ -31,7 +31,7 @@ conversation with one; it does not mean anyone will develop a condition.
 - /conditions  the catalog picker
 - /board       the live household board
 - /mail        the optional morning plan
-- /profile     name, household, join code, leaving
+- /profile     name, household, invite link, leaving
 
 ## How it works
 

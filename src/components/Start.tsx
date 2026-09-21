@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { saveSession, type Session } from '../session';
 import type { Me } from '../types';
-import { CopyButton, Mark } from './Brand';
+import type { Route } from '../site';
+import { Mark } from './Brand';
 
 /**
  * Onboarding, in four steps, one visible at a time.
@@ -14,34 +15,104 @@ import { CopyButton, Mark } from './Brand';
  * at least one condition, so the first Today anyone sees is a real one.
  */
 
-type Shape = 'solo' | 'household' | 'join';
+type Shape = 'solo' | 'household';
 
 const HEADING: Record<number, string> = {
-  1: 'Who is this for?',
-  2: 'Before you pick anything.',
-  3: 'What should the board call you?',
-  4: 'What runs in your family?',
+  1: 'First, an account.',
+  2: 'Who is this for?',
+  3: 'Before you pick anything.',
+  4: 'What should the board call you?',
+  5: 'What runs in your family?',
 };
+
+const STEPS = 5;
+
+/** An invite survives a trip through sign-in. */
+const INVITE_KEY = 'allgas.invite';
+
+function readInvite(): string | null {
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get('invite');
+    if (fromUrl) {
+      window.sessionStorage.setItem(INVITE_KEY, fromUrl);
+      return fromUrl;
+    }
+    return window.sessionStorage.getItem(INVITE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function clearInvite(): void {
+  try {
+    window.sessionStorage.removeItem(INVITE_KEY);
+  } catch {
+    // Blocked storage. The invite simply does not persist.
+  }
+}
 
 export default function Start({
   session,
   me,
+  authed,
   onSession,
   onDone,
+  go,
 }: {
   session: Session | null;
   me: Me | null;
+  authed: boolean;
   onSession: (next: Session) => void;
   onDone: () => void;
+  go: (to: Route) => void;
 }) {
-  // The step is derived from what actually exists, not from a counter, so
-  // a reload in the middle lands back where it left off.
-  const step = !session ? 1 : me === null ? 1 : me.needsConsent ? 2 : !me.name.trim() ? 3 : 4;
+  const status = useQuery(api.authStatus.status, {});
+  const join = useMutation(api.households.join);
+  const invite = readInvite();
+  const claimed = useRef(false);
+
+  // An account is the first step, but only where the deployment can
+  // actually sign one. If it cannot, requiring an account would lock
+  // everybody out of their own app, so the flow falls back to the way it
+  // worked before accounts existed.
+  const accountsUsable = status?.ready ?? false;
+  const needsAccount = accountsUsable && !authed;
+
+  // An invite link adds you to that household instead of asking which
+  // shape you want. It is consumed once, and only once there is an
+  // account to attach it to.
+  useEffect(() => {
+    if (!invite || session || claimed.current) return;
+    if (accountsUsable && !authed) return;
+    claimed.current = true;
+    void join({ joinCode: invite, memberName: 'Me' })
+      .then((result) => {
+        if (result.ok) {
+          const next = { memberId: result.memberId, householdId: result.householdId };
+          saveSession(next);
+          onSession(next);
+        }
+        clearInvite();
+      })
+      .catch(() => clearInvite());
+  }, [invite, session, authed, accountsUsable, join, onSession]);
+
+  // Derived from what exists rather than from a counter, so a reload in
+  // the middle lands back where it left off.
+  const step = needsAccount
+    ? 1
+    : !session || me === null
+      ? 2
+      : me.needsConsent
+        ? 3
+        : !me.name.trim()
+          ? 4
+          : 5;
 
   return (
     <>
       <div className="chrome">
-        <button className="home" onClick={onDone} aria-label="Preventah, go home">
+        <button className="home" onClick={() => go('/')} aria-label="Preventah, go home">
           <Mark size={40} />
           <span className="wordmark">Preventah</span>
         </button>
@@ -50,102 +121,86 @@ export default function Start({
       <h1>{HEADING[step]}</h1>
 
       <p className="progress" aria-live="polite">
-        Step {step} of 4
+        Step {step} of {STEPS}
       </p>
       <div className="progressBar" role="presentation">
-        {[1, 2, 3, 4].map((n) => (
+        {Array.from({ length: STEPS }, (_, i) => i + 1).map((n) => (
           <span key={n} className={n <= step ? 'progressPip on' : 'progressPip'} />
         ))}
       </div>
 
-      {step === 1 && <StepShape onSession={onSession} />}
-      {step === 2 && session && <StepConsent memberId={session.memberId} />}
-      {step === 3 && session && me && <StepName me={me} />}
-      {step === 4 && session && me && <StepConditions me={me} onDone={onDone} />}
+      {step === 1 && <StepAccount go={go} invited={Boolean(invite)} />}
+      {step === 2 && <StepShape onSession={onSession} />}
+      {step === 3 && session && <StepConsent memberId={session.memberId} />}
+      {step === 4 && session && me && <StepName me={me} />}
+      {step === 5 && session && me && <StepConditions me={me} onDone={onDone} />}
     </>
   );
 }
 
+/**
+ * The account gate.
+ *
+ * Nothing about a household is created until there is somewhere durable
+ * to hang it, because a household that lives only in one browser is one
+ * cleared cache away from gone.
+ */
+function StepAccount({ go, invited }: { go: (to: Route) => void; invited: boolean }) {
+  return (
+    <section className="window plated roomy">
+      <p className="bar cream">Sign in or create an account</p>
+      <p>
+        {invited
+          ? 'You have been invited to a household. Sign in and you will be added to it.'
+          : 'Your household lives with your account, so it survives a new phone or a cleared browser.'}
+      </p>
+      <div className="btnRow" style={{ marginTop: 14 }}>
+        <button className="btn primary" onClick={() => go('/signup')}>
+          Create an account
+        </button>
+        <button className="btn" onClick={() => go('/signin')}>
+          Sign in
+        </button>
+      </div>
+    </section>
+  );
+}
+
 const SHAPES: { shape: Shape; label: string; hint: string }[] = [
-  { shape: 'solo', label: 'Just me', hint: 'A household of one. Add family whenever you like.' },
-  { shape: 'household', label: 'Start a household', hint: 'Get a code and share it with the house.' },
-  { shape: 'join', label: 'I have a code', hint: 'Someone has already started one.' },
+  { shape: 'solo', label: 'Just me', hint: 'A household of one. Invite family whenever you like.' },
+  {
+    shape: 'household',
+    label: 'Start a household',
+    hint: 'For the people you live with. Invite them with a link.',
+  },
 ];
 
 function StepShape({ onSession }: { onSession: (next: Session) => void }) {
   const create = useMutation(api.households.create);
-  const join = useMutation(api.households.join);
   const [shape, setShape] = useState<Shape>('solo');
   const [householdName, setHouseholdName] = useState('');
   const [memberName, setMemberName] = useState('');
-  const [joinCode, setJoinCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [code, setCode] = useState<{ value: string; session: Session; solo: boolean } | null>(null);
 
   async function submit() {
     setBusy(true);
     setError(null);
     try {
-      if (shape === 'join') {
-        const result = await join({ joinCode, memberName });
-        if (!result.ok) {
-          setError(result.reason);
-          return;
-        }
-        onSession({ memberId: result.memberId, householdId: result.householdId });
-        return;
-      }
       const solo = shape === 'solo';
       const trimmed = memberName.trim();
-      const name = solo ? `${trimmed || 'My'}${/s$/i.test(trimmed) ? "'" : "'s"} plan` : householdName;
+      const name = solo
+        ? `${trimmed || 'My'}${/s$/i.test(trimmed) ? "'" : "'s"} plan`
+        : householdName;
       const result = await create({ householdName: name, memberName });
       const next = { memberId: result.memberId, householdId: result.householdId };
       saveSession(next);
-      setCode({ value: result.joinCode, session: next, solo });
+      onSession(next);
     } catch {
       setError('That did not go through. Check your connection and try again.');
     } finally {
       setBusy(false);
     }
-  }
-
-  if (code) {
-    return (
-      <section className="window plated roomy">
-        <p className="bar mint">{code.solo ? 'Ready' : 'Your join code'}</p>
-        {code.solo ? (
-          <>
-            <p>
-              Everything works the same as it does for a family: the same three actions, the same
-              board, with one row on it.
-            </p>
-            <details className="fold">
-              <summary>Invite family later</summary>
-              <p className="muted">Anyone who types this code joins your household.</p>
-              <div className="codeRow">
-                <span className="code small">{code.value}</span>
-                <CopyButton value={code.value} label="Copy code" />
-              </div>
-            </details>
-          </>
-        ) : (
-          <>
-            <p className="code">{code.value}</p>
-            <div className="codeRow">
-              <CopyButton value={code.value} label="Copy code" />
-            </div>
-            <p className="muted">
-              Anyone in the house uses this to join. It is how you enter a household, not how you
-              sign in.
-            </p>
-          </>
-        )}
-        <button className="btn primary block" onClick={() => onSession(code.session)}>
-          Continue
-        </button>
-      </section>
-    );
   }
 
   return (
@@ -177,22 +232,6 @@ function StepShape({ onSession }: { onSession: (next: Session) => void }) {
             value={householdName}
             onChange={(event) => setHouseholdName(event.target.value)}
             placeholder="Ours"
-          />
-        </label>
-      )}
-
-      {shape === 'join' && (
-        <label className="field" htmlFor="startCode">
-          <span>Join code</span>
-          <input
-            id="startCode"
-            value={joinCode}
-            onChange={(event) => setJoinCode(event.target.value.toUpperCase())}
-            placeholder="ABC234"
-            maxLength={6}
-            autoComplete="off"
-            autoCapitalize="characters"
-            spellCheck={false}
           />
         </label>
       )}

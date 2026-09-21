@@ -140,8 +140,10 @@ export default function App() {
         <Start
           session={session}
           me={me ?? null}
+          authed={authed}
           onSession={(next) => identity.adopt(next)}
           onDone={() => go('/today')}
+          go={go}
         />
       </Shell>
     );
@@ -154,8 +156,10 @@ export default function App() {
         <Start
           session={session}
           me={me ?? null}
+          authed={authed}
           onSession={(next) => identity.adopt(next)}
           onDone={() => go('/today')}
+          go={go}
         />
       </Shell>
     );
@@ -174,8 +178,10 @@ export default function App() {
         <Start
           session={null}
           me={null}
+          authed={authed}
           onSession={(next) => identity.adopt(next)}
           onDone={() => go('/today')}
+          go={go}
         />
       </Shell>
     );

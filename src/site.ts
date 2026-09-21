@@ -20,6 +20,17 @@ export const PURPOSE = 'Prevent the diseases that run in your family.';
 export const CONTACT_EMAIL = 'TODO_SET_CONTACT_EMAIL';
 export const hasContactEmail = () => !CONTACT_EMAIL.startsWith('TODO_');
 
+/**
+ * The link that adds someone to a household.
+ *
+ * The token is the household's existing key, so households created
+ * before invites keep working; it is never shown on its own, because a
+ * bare code invites being read aloud, typed wrong and treated as a
+ * password. A link is a link.
+ */
+export const inviteUrl = (token: string) =>
+  `${ORIGIN}/start?invite=${encodeURIComponent(token)}`;
+
 export const APP_ROUTES = ['/today', '/conditions', '/board', '/mail', '/profile'] as const;
 
 /**
@@ -90,9 +101,9 @@ export const META: Record<Route, Meta> = {
       'Preventah helps a household act on the illnesses that already run in it. It does not diagnose, predict who gets sick, or replace a clinician.',
   },
   '/faq': {
-    title: 'Questions about Preventah — consent, join codes, sources, data',
+    title: 'Questions about Preventah — consent, invites, sources, data',
     description:
-      'How consent works, what a join code is for, where the guidance comes from, what happens to your data, and how solo use differs from a family.',
+      'How consent works, how to invite the people you live with, where the guidance comes from, what happens to your data, and how solo use differs from a family.',
   },
   '/privacy': {
     title: 'Privacy — what Preventah stores and why',

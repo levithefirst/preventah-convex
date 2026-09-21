@@ -75,12 +75,12 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
-    q: 'What is the join code for?',
+    q: 'How do I add the people I live with?',
     a: (
       <>
-        It is how you enter a household, not how you log in. Six characters, no letters that get
-        misheard, and anyone who has it can join. Treat it like a door number rather than a key,
-        and only give it to people you would let in the front door.
+        Profile and the household board both have an invite link. Send it to someone you live
+        with and opening it adds them to your household. Treat it like a key to the front door:
+        anyone who has the link can join, so only send it to people you would let in.
       </>
     ),
   },
@@ -121,8 +121,8 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
     a: (
       <>
         Yes, and it is not a lesser version. Choosing <em>Just me</em> creates a household with
-        one person in it: same actions, same board, same everything. The join code still exists,
-        tucked away, if you ever want to add someone.
+        one person in it: same actions, same board, same everything. The invite link is still
+        there if you ever want to add someone.
       </>
     ),
   },
@@ -215,7 +215,7 @@ export function Privacy() {
             <strong>A first name</strong>, the one you type when you create or join a household.
           </li>
           <li>
-            <strong>A household</strong>: its name, its join code, and who belongs to it.
+            <strong>A household</strong>: its name, its invite key, and who belongs to it.
           </li>
           <li>
             <strong>Condition ids from the catalog.</strong> Ids only, from a fixed list. There is
@@ -313,7 +313,7 @@ export function Terms() {
         <p className="bar cream">Acceptable use</p>
         <ul>
           <li>Do not put anyone else's health information in it without their agreement.</li>
-          <li>Do not share a join code with people the household would not let in.</li>
+          <li>Do not share an invite link with people the household would not let in.</li>
           <li>Do not use it to give anyone medical advice, including yourself.</li>
           <li>Do not attempt to disrupt the service or the people using it.</li>
         </ul>

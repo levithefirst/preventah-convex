@@ -49,8 +49,8 @@ export function Disclaimer({ onLeave }: { onLeave?: () => void }) {
 }
 
 /**
- * Copies a join code. Falls back to selecting nothing and simply saying
- * so, because the code is always readable on screen anyway.
+ * Copies a value to the clipboard, saying so for two seconds. When the
+ * clipboard is unavailable it says that instead of failing silently.
  */
 export function CopyButton({ value, label }: { value: string; label: string }) {
   const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');

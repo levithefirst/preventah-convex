@@ -33,22 +33,10 @@ export default function Landing({
             <button className="btn primary" onClick={() => go(primaryTo)}>
               {primaryLabel}
             </button>
-            {hasHousehold ? (
-              <button className="btn" onClick={() => go('/start')}>
-                Start a new household
-              </button>
-            ) : (
-              <button className="btn" onClick={() => go('/about')}>
-                What this is
-              </button>
-            )}
-          </div>
-
-          <p className="heroLinks">
-            <button className="link" onClick={() => go('/start')}>
-              Join with a code
+            <button className="btn" onClick={() => go('/signin')}>
+              Sign in
             </button>
-          </p>
+          </div>
 
           <p className="howLine" id="how">
             Create or join a household. Choose conditions. Check in.

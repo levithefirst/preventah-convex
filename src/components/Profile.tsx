@@ -5,6 +5,7 @@ import { api } from '../../convex/_generated/api';
 import type { Me } from '../types';
 import type { Id } from '../../convex/_generated/dataModel';
 import { CopyButton } from './Brand';
+import { inviteUrl } from '../site';
 
 /**
  * Profile: who this browser is, which household it belongs to, and the
@@ -60,12 +61,11 @@ export default function Profile({
         <div className="window">
           <p className="bar cream">Invite someone</p>
           <p className="muted">
-            Anyone who types this code joins your household and appears on the board. It is not a
-            password and it is not how you sign in.
+            Send this link to someone you live with. Opening it adds them to your household and
+            puts them on the board.
           </p>
           <div className="codeRow">
-            <span className="code small">{board.joinCode}</span>
-            <CopyButton value={board.joinCode} label="Copy code" />
+            <CopyButton value={inviteUrl(board.joinCode)} label="Copy invite link" />
           </div>
         </div>
       )}

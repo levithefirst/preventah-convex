@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth (Password, plus Google when configured)
 - **AI models:** gpt-5-nano, falling back to gpt-4.1-nano then gpt-4o-mini
 - **Started:** 2026-09-19T17:58:00Z
-- **Last updated:** 2026-09-21T18:55:00Z
+- **Last updated:** 2026-09-21T21:15:00Z
 
 ## Log
 
@@ -411,3 +411,37 @@ hero's primary says.
 
 The footer is pinned with `margin-top: auto`, so a short form is followed by
 the footer rather than by a field of lavender.
+
+### 2026-09-21 - working tree
+Desktop layout, account-first onboarding, and the end of the join code.
+
+The landing is an ordinary document again. It had `min-height: 100dvh` on the
+column and `margin-top: auto` on the footer, so on a short page the footer was
+pinned to the bottom of the screen and everything between it and the hero was
+canvas. Both are gone for `/`. Measured at 1280x800: the footer's top is 468px
+and the hero's bottom is 468px, a gap of zero, with the document exactly one
+viewport tall. The hero is a two column grid, both columns top-aligned, 48px
+gap, capped at 72rem, character at 280px. The two buttons share the column at
+equal width and height rather than floating as two pills.
+
+The header carries How it works, Sign in, Sign up and the mint primary, still
+on one row at every width, still folding into a Menu below 720px. The hero's
+secondary is Sign in; "What this is" moved into the Menu, where the footer's
+About already covers it.
+
+The join code is gone from the product. Nobody is shown a six-character string
+to read aloud, and nothing calls it "not a password" to explain what it is not.
+Inviting someone copies a link to `/start?invite=<token>`; opening it while
+signed in attaches them to that household. The token is the household's
+existing key, so households created before this keep working, and the schema
+column is untouched. Zero user-facing hits for "join code", "Join with" or
+"six characters" remain; the only occurrences left are the three places the
+token is passed to the API.
+
+Onboarding leads with the account, because a household that lives in one
+browser is a cleared cache away from gone. Five steps now: account, solo or
+household, consent, name, conditions. The "I have a code" branch is gone,
+replaced by the invite link. One guard worth naming: the account step is only
+required where the deployment reports it can sign a session, since requiring
+an account the deployment cannot issue would lock everyone out of their own
+app.

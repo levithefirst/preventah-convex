@@ -2,6 +2,7 @@ import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import { CopyButton } from './Brand';
+import { inviteUrl } from '../site';
 
 /**
  * The live household board.
@@ -32,14 +33,11 @@ export default function Board({ householdId }: { householdId: Id<'households'> }
         </p>
 
         <div className="codeRow" style={{ marginTop: 12 }}>
-          <span className="code" style={{ fontSize: 26, letterSpacing: '0.1em' }}>
-            {board.joinCode}
-          </span>
-          <CopyButton value={board.joinCode} label="Copy join code" />
+          <CopyButton value={inviteUrl(board.joinCode)} label="Copy invite link" />
         </div>
         <p className="tiny">
-          Anyone with the code can join. Members see that you checked in and how many conditions
-          you track, never which ones.
+          Anyone who opens that link joins this household. Members see that you checked in and how
+          many conditions you track, never which ones.
         </p>
       </div>
 

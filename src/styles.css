@@ -393,7 +393,7 @@ input:not([type]) {
 .score { text-align: right; white-space: nowrap; font-family: var(--font-title); }
 .score .big { display: block; font-size: 26px; font-weight: 800; line-height: 1; }
 
-/* The join code is the one thing on the Gate worth shouting. */
+/* Kept for any value worth showing at display size. */
 .code {
   font-family: var(--font-title);
   font-size: clamp(34px, 11vw, 52px);
@@ -680,7 +680,13 @@ li { margin-bottom: 6px; }
 .heroMark { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
 .heroWord { font-family: var(--font-title); font-weight: 800; font-size: 28px; }
 
-.heroCtas { margin-top: 16px; }
+/* The pair shares the column: equal width, equal height, so they read as
+   one control with two options rather than two stray pills. */
+.heroCtas { margin-top: 18px; display: grid; gap: 10px; }
+@media (min-width: 560px) {
+  .heroCtas { grid-template-columns: 1fr 1fr; max-width: 30rem; }
+}
+.heroCtas > .btn { width: 100%; min-height: 52px; }
 .heroLinks { display: flex; align-items: center; gap: 4px; margin-top: 10px; }
 
 .pillRow { margin-top: 14px; }
@@ -727,7 +733,7 @@ li { margin-bottom: 6px; }
 /* Sized by height rather than width, so the whole body, card and bench
    fit the band whatever the column does. */
 .char { height: 224px; width: auto; max-width: 100%; display: block; overflow: visible; }
-@media (min-width: 900px) { .char { height: 312px; } }
+@media (min-width: 900px) { .char { height: 280px; } }
 
 /* Idle motion: a slow breath, an occasional blink, one pop of the check.
    All of it is decoration, and the reduced-motion block below turns the
@@ -764,7 +770,18 @@ li { margin-bottom: 6px; }
 
 /* ============================================================== landing */
 
-.wrap.bare { max-width: none; padding-left: 0; padding-right: 0; }
+/* The landing is a normal document. No viewport minimum, so its height
+   is header + hero + footer and nothing else; and no footer pinned to
+   the bottom of a screen it does not fill, which is what produced a slab
+   of canvas between the hero and the legal line. */
+.wrap.bare {
+  max-width: none;
+  min-height: 0;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0;
+}
+.wrap.bare .foot { margin-top: 0; }
 .wrap.bare > * { padding-left: 16px; padding-right: calc(16px + var(--plate)); }
 @media (min-width: 640px) {
   .wrap.bare > * { padding-left: 20px; padding-right: calc(20px + var(--plate)); }
@@ -828,12 +845,15 @@ li { margin-bottom: 6px; }
 }
 @media (min-width: 900px) {
   .heroSplit {
-    grid-template-columns: 1.1fr 0.9fr;
+    grid-template-columns: 1.05fr 0.95fr;
+    /* Both columns start at the same line; nothing is centred into a
+       box bigger than it needs. */
     align-items: start;
-    min-height: clamp(360px, calc(100dvh - 320px), 560px);
-    gap: 40px;
-    padding-top: 30px;
-    padding-bottom: 30px;
+    gap: 48px;
+    max-width: 72rem;
+    margin: 0 auto;
+    padding-top: 40px;
+    padding-bottom: 48px;
   }
 }
 
@@ -857,7 +877,7 @@ li { margin-bottom: 6px; }
   overflow: visible;
 }
 @media (min-width: 900px) {
-  .heroArt { min-height: 320px; justify-content: flex-end; }
+  .heroArt { min-height: 288px; justify-content: flex-end; }
 }
 
 /* ========================================================== onboarding */
