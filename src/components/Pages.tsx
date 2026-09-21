@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { CONTACT_EMAIL, PURPOSE, REPO, hasContactEmail, type Route } from '../site';
 
 /**
@@ -186,16 +187,54 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
   },
 ];
 
+/**
+ * The questions, as an accordion.
+ *
+ * One open at a time, because the point of the page is to answer the one
+ * thing someone came to ask rather than to present eight essays. The row
+ * is a real button, so Enter and Space work without any key handling of
+ * our own, and the open row wears the same mint bar Today uses for a
+ * completed action: mint means active here as it does there.
+ */
 export function Faq() {
+  const [open, setOpen] = useState<number | null>(null);
+
   return (
     <>
       <h1>Questions.</h1>
-      {FAQS.map((item) => (
-        <section className="window" key={item.q}>
-          <h2>{item.q}</h2>
-          <p>{item.a}</p>
-        </section>
-      ))}
+      <div className="accordion">
+        {FAQS.map((item, index) => {
+          const isOpen = open === index;
+          const panelId = `faqPanel${index}`;
+          const buttonId = `faqButton${index}`;
+          return (
+            <section className={isOpen ? 'window acc open' : 'window acc'} key={item.q}>
+              <h2 className="accHead">
+                <button
+                  id={buttonId}
+                  className="accButton"
+                  aria-expanded={isOpen}
+                  aria-controls={panelId}
+                  onClick={() => setOpen(isOpen ? null : index)}
+                >
+                  <span className="accQ">{item.q}</span>
+                  <span className="chevron" aria-hidden="true" />
+                </button>
+              </h2>
+              <div
+                className={isOpen ? 'disclosure open' : 'disclosure'}
+                id={panelId}
+                role="region"
+                aria-labelledby={buttonId}
+              >
+                <div className="disclosureInner">
+                  <p className="accBody">{item.a}</p>
+                </div>
+              </div>
+            </section>
+          );
+        })}
+      </div>
     </>
   );
 }
