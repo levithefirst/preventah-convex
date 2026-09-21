@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { useAuthActions } from '@convex-dev/auth/react';
 import { PURPOSE, type Route } from '../site';
 import { Mark } from './Brand';
@@ -62,6 +63,40 @@ export default function Landing({
   hasHousehold: boolean;
 }) {
   const { signOut } = useAuthActions();
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        buttonRef.current?.focus();
+      }
+    };
+    const onClick = (event: MouseEvent) => {
+      if (
+        !menuRef.current?.contains(event.target as Node) &&
+        !buttonRef.current?.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onClick);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onClick);
+    };
+  }, [open]);
+
+  // The mint button means the same thing in the header and the hero.
+  // A device that already has a household opens it; everyone else
+  // starts one, and "Start" stays available either way so a judge or a
+  // second family is never told the product is already over.
+  const primaryLabel = hasHousehold ? 'Open app' : 'Start';
+  const primaryTo: Route = hasHousehold ? '/app' : '/start';
 
   return (
     <>
@@ -69,6 +104,17 @@ export default function Landing({
         <button className="home" onClick={() => go('/')} aria-label="Preventah, go home">
           <Mark size={40} />
           <span className="wordmark">Preventah</span>
+        </button>
+
+        <button
+          ref={buttonRef}
+          className="btn landMenuButton"
+          aria-expanded={open}
+          aria-controls="landMenu"
+          aria-haspopup="true"
+          onClick={() => setOpen(!open)}
+        >
+          {open ? 'Close' : 'Menu'}
         </button>
 
         <nav className="landNav" aria-label="Site">
@@ -89,10 +135,63 @@ export default function Landing({
               Sign in
             </button>
           )}
-          <button className="btn primary" onClick={() => go(hasHousehold ? '/app' : '/start')}>
-            {hasHousehold ? 'Open app' : 'Start'}
+          <button className="btn primary" onClick={() => go(primaryTo)}>
+            {primaryLabel}
           </button>
         </nav>
+
+        {open && (
+          <div className="menu landMenu" id="landMenu" ref={menuRef} role="menu">
+            <a className="menuItem" role="menuitem" href="#how" onClick={() => setOpen(false)}>
+              How it works
+            </a>
+            {authed ? (
+              <>
+                <button
+                  className="menuItem"
+                  role="menuitem"
+                  onClick={() => {
+                    setOpen(false);
+                    go('/profile');
+                  }}
+                >
+                  Profile
+                </button>
+                <button
+                  className="menuItem"
+                  role="menuitem"
+                  onClick={() => {
+                    setOpen(false);
+                    void signOut().finally(() => go('/'));
+                  }}
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <button
+                className="menuItem"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  go('/signin');
+                }}
+              >
+                Sign in
+              </button>
+            )}
+            <button
+              className="menuItem"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                go(primaryTo);
+              }}
+            >
+              {primaryLabel}
+            </button>
+          </div>
+        )}
       </header>
 
       <section className="heroSplit">
@@ -106,18 +205,32 @@ export default function Landing({
           </p>
 
           <div className="btnRow heroCtas">
-            <button className="btn primary" onClick={() => go(hasHousehold ? '/app' : '/start')}>
-              {hasHousehold ? 'Open app' : 'Start'}
+            <button className="btn primary" onClick={() => go(primaryTo)}>
+              {primaryLabel}
             </button>
-            <button className="btn" onClick={() => go('/signin')}>
-              Sign in
-            </button>
+            {hasHousehold ? (
+              <button className="btn" onClick={() => go('/start')}>
+                Start a new household
+              </button>
+            ) : (
+              <button className="btn" onClick={() => go('/signin')}>
+                Sign in
+              </button>
+            )}
           </div>
 
           <p className="heroLinks">
             <button className="link" onClick={() => go('/start')}>
               Join with a code
             </button>
+            {hasHousehold && (
+              <>
+                <span aria-hidden="true"> &middot; </span>
+                <button className="link" onClick={() => go('/signin')}>
+                  Sign in
+                </button>
+              </>
+            )}
           </p>
         </div>
 

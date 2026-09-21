@@ -716,7 +716,10 @@ li { margin-bottom: 6px; }
 
 /* ============================================================ character */
 
-.char { width: 100%; max-width: 320px; height: auto; display: block; }
+/* Sized by height rather than width, so the whole body, card and bench
+   fit the band whatever the column does. */
+.char { height: 224px; width: auto; max-width: 100%; display: block; overflow: visible; }
+@media (min-width: 900px) { .char { height: 312px; } }
 
 /* Idle motion: a slow breath, an occasional blink, one pop of the check.
    All of it is decoration, and the reduced-motion block below turns the
@@ -766,29 +769,56 @@ li { margin-bottom: 6px; }
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  /* Never wraps. On a phone the links live in the Menu instead, because
+     a header that folds into two cramped rows reads as broken. */
+  flex-wrap: nowrap;
+  padding-top: 10px;
+  padding-bottom: 10px;
   background: var(--canvas);
   border-bottom: var(--edge);
 }
-.landNav { display: flex; align-items: center; gap: 14px; margin-left: auto; flex-wrap: wrap; }
 
+.landNav { display: none; }
+.landMenuButton { margin-left: auto; }
+
+@media (min-width: 720px) {
+  .landMenuButton { display: none; }
+  .landNav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-left: auto;
+    flex-wrap: nowrap;
+  }
+}
+
+/**
+ * The hero.
+ *
+ * Top-aligned, not centred. Centring inside a tall minimum is what
+ * produced a short strip of copy floating in a field of lavender: the
+ * content sat in the middle of a box far bigger than it needed.
+ *
+ * The minimum is also deliberately less than a viewport. A hero that
+ * owns the whole first screen pushes "How it works" exactly one scroll
+ * away, and the first screen is where someone decides whether this is
+ * worth reading.
+ */
 .heroSplit {
   display: grid;
-  gap: 24px;
-  align-content: center;
-  padding-top: 26px;
-  padding-bottom: 34px;
+  gap: 18px;
+  align-content: start;
+  padding-top: 22px;
+  padding-bottom: 26px;
 }
 @media (min-width: 900px) {
   .heroSplit {
-    grid-template-columns: 1.15fr 0.85fr;
-    align-items: center;
-    /* Full height on desktop, and never on a phone, where 100dvh of
-       hero just pushes the point below the fold. */
-    min-height: calc(100dvh - 80px);
+    grid-template-columns: 1.1fr 0.9fr;
+    align-items: start;
+    min-height: clamp(360px, calc(100dvh - 320px), 560px);
     gap: 40px;
+    padding-top: 30px;
+    padding-bottom: 30px;
   }
 }
 
@@ -802,14 +832,26 @@ li { margin-bottom: 6px; }
 }
 .heroCopy h1 { font-size: clamp(32px, 8vw, 58px); }
 @media (min-width: 900px) { .heroCopy h1 { font-size: clamp(44px, 4.2vw, 62px); } }
-.heroArt { display: flex; justify-content: center; }
+/* The figure gets a reserved band of its own so it is never cropped and
+   never parked under the fold. */
+.heroArt {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 232px;
+  overflow: visible;
+}
+@media (min-width: 900px) {
+  .heroArt { min-height: 320px; justify-content: flex-end; }
+}
 
 .sectionTitle {
   font-size: clamp(22px, 5vw, 30px);
   margin: 0 0 14px;
 }
 
-.how { padding-top: 10px; padding-bottom: 30px; }
+/* Starts straight under the hero, not a screen later. */
+.how { padding-top: 6px; padding-bottom: 30px; }
 .howGrid { display: grid; gap: 12px; }
 @media (min-width: 760px) { .howGrid { grid-template-columns: repeat(3, 1fr); } }
 .stepNum {
@@ -869,3 +911,7 @@ li { margin-bottom: 6px; }
 .sourceCard h3 { font-size: 15px; margin: 0 0 4px; }
 .sourceCard p { margin: 0 0 6px; }
 .sourceCard a { font-size: 14px; }
+
+/* The landing menu hangs from the sticky header, same parts as the app one. */
+.landMenu { top: calc(100% + 2px); }
+.landMenu a.menuItem { display: flex; align-items: center; text-decoration: none; }

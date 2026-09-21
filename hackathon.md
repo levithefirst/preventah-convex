@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth (Password, plus Google when configured)
 - **AI models:** gpt-5-nano, falling back to gpt-4.1-nano then gpt-4o-mini
 - **Started:** 2026-09-19T17:58:00Z
-- **Last updated:** 2026-09-21T18:05:00Z
+- **Last updated:** 2026-09-21T18:30:00Z
 
 ## Log
 
@@ -356,3 +356,30 @@ out stays, because it is the way out.
 Rendered at 390 and 1280: one h1 per route, no Today content on `/`, character
 present, no horizontal scroll, no tap target under 44px, no page errors. 47
 tests pass.
+
+### 2026-09-21 - working tree
+Three landing layout fixes, no new features.
+
+The purple desert was `align-content: center` inside a full-viewport
+minimum: a short strip of copy floating in the middle of a box far larger
+than it needed. The hero is now top-aligned, and its minimum is deliberately
+less than a screen, because a hero that owns the whole first view pushes
+"How it works" exactly one scroll away. Measured at 1280x800: the section
+heading now sits at 578px with its three cards visible, where it used to
+start past the fold.
+
+The character has a reserved band of its own rather than whatever height the
+column happened to give it, sized by height instead of width so the whole
+body, card and bench fit: 224px under the calls to action on a phone, 312px
+beside the headline on desktop. Nothing is cropped and it is on the first
+screen at 390 as well as 1280.
+
+The primary call to action no longer tells a visitor the product is over. A
+device with a household still gets "Open app" as the mint button, but "Start
+a new household" sits beside it in cream, so a judge or a second family has
+somewhere to go. The header's mint button says the same thing as the hero's.
+
+The phone header stopped wrapping into two cramped rows: the links moved into
+a Menu, which closes on Escape and returns focus to its button like the app's
+does. Measured at 390, 768 and 1280, the header is 72px and one row at all
+three.
