@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { CONTACT_EMAIL, PURPOSE, REPO, hasContactEmail, type Route } from '../site';
-import { Mark } from './Brand';
+import { CONTACT_EMAIL, REPO, hasContactEmail, type Route } from '../site';
 
 /**
  * The public pages.
@@ -9,78 +8,6 @@ import { Mark } from './Brand';
  * privacy page in particular is written from the schema rather than from
  * a template: if a table is added, that page is the one that changes.
  */
-
-/**
- * The signed-out front door.
- *
- * One hero window carrying the mark, the purpose line and the four
- * things you can do, built from the same parts as every other window: a
- * hard ink edge, an offset blush plate, and a mint tab instead of a
- * full-width bar. It is the only hero in the product; every other screen
- * gets straight to work.
- */
-export function Home({ go }: { go: (to: Route) => void }) {
-  return (
-    <>
-      <section className="window plated hero">
-        <span className="heroTab">Daily prevention</span>
-
-        <div className="heroMark">
-          <Mark size={72} />
-          <span className="heroWord">Preventah</span>
-        </div>
-
-        <h1>{PURPOSE}</h1>
-        <p className="lede">
-          A family history is a household fact, so prevention is a household activity. Pick the
-          conditions that run in yours, get one thing to eat, one to move and one to keep, and
-          check one off. Everyone else sees it straight away.
-        </p>
-
-        <div className="btnRow heroCtas">
-          <button className="btn primary" onClick={() => go('/today')}>
-            Start
-          </button>
-          <button className="btn" onClick={() => go('/signin')}>
-            Sign in
-          </button>
-        </div>
-
-        <p className="heroLinks">
-          <button className="link" onClick={() => go('/signup')}>
-            Sign up
-          </button>
-          <span aria-hidden="true"> &middot; </span>
-          <button className="link" onClick={() => go('/about')}>
-            What this is
-          </button>
-        </p>
-
-        <p className="pillRow">
-          <span className="pill">No ads &middot; no trackers</span>
-        </p>
-      </section>
-
-      <section className="window">
-        <p className="bar cream">How it works</p>
-        <ol className="steps">
-          <li>
-            <strong>Start a household, or just yourself.</strong> One person is a household of
-            one, with the same screens and a code you can share later.
-          </li>
-          <li>
-            <strong>Pick the conditions.</strong> From a curated catalog of more than a hundred,
-            with a plain sentence on what a family history does and does not mean.
-          </li>
-          <li>
-            <strong>Do one of today's three.</strong> Each carries the public-health source it
-            came from, linked so you can read it yourself.
-          </li>
-        </ol>
-      </section>
-    </>
-  );
-}
 
 export function About() {
   return (

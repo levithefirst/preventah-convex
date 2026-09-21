@@ -10,9 +10,13 @@ import { Mark } from './Brand';
  * to Today, which is why tapping them felt broken: Today is a tab, and a
  * logo that lands on a tab gives you no way out of the app.
  *
- * Account actions sit with the destinations rather than buried in
- * Profile. On a phone the whole set collapses into one Menu that closes
- * on Escape and returns focus to its button.
+ * The tab row is the five destinations and nothing else: Sign in and
+ * Sign up belong on the marketing home and on their own routes, not
+ * crowding the row someone uses every day. Sign out stays in the phone
+ * menu and in Profile, because it is the way out.
+ *
+ * On a phone the set collapses into one Menu that closes on Escape and
+ * returns focus to its button.
  */
 
 const LABEL: Record<string, string> = {
@@ -102,20 +106,6 @@ export default function Nav({
             {LABEL[path]}
           </button>
         ))}
-        {authed ? (
-          <button className="tab" onClick={leave}>
-            Sign out
-          </button>
-        ) : (
-          <>
-            <button className="tab" onClick={() => go('/signin')}>
-              Sign in
-            </button>
-            <button className="tab" onClick={() => go('/signup')}>
-              Sign up
-            </button>
-          </>
-        )}
       </nav>
 
       {open && (
@@ -131,19 +121,12 @@ export default function Nav({
               {LABEL[path]}
             </button>
           ))}
-          {authed ? (
+          {/* Account actions stay out of the tab row; Sign out is the
+              one exception, because it is the way out of the app. */}
+          {authed && (
             <button className="menuItem" role="menuitem" onClick={leave}>
               Sign out
             </button>
-          ) : (
-            <>
-              <button className="menuItem" role="menuitem" onClick={() => visit('/signin')}>
-                Sign in
-              </button>
-              <button className="menuItem" role="menuitem" onClick={() => visit('/signup')}>
-                Sign up
-              </button>
-            </>
           )}
         </div>
       )}

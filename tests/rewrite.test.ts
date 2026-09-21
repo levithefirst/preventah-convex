@@ -407,3 +407,37 @@ test('the day is claimed before the call, so one member costs one call', () => {
   assert.ok(claim > 0 && call > claim, 'the claim does not precede the call');
   assert.match(source, /if \(rowId === null\)/);
 });
+
+// ------------------------------------------------------- crawl snippets
+
+test('a crawled description becomes one sentence, or nothing at all', async () => {
+  const { cleanSnippet } = await import('../convex/lib/snippet.ts');
+  const NL = String.fromCharCode(10);
+
+  // Page furniture is stripped, and the first real sentence survives.
+  assert.equal(
+    cleanSnippet(
+      `## Overview${NL}Skip to main content. High blood pressure, also called hypertension, is blood pressure that is higher than normal. Read more at https://example.com/x`,
+    ),
+    'High blood pressure, also called hypertension, is blood pressure that is higher than normal.',
+  );
+
+  // Breadcrumb links and cookie notices do not become the summary.
+  assert.equal(
+    cleanSnippet(
+      '[Home](https://a.b) > [Health](https://a.b/h) | **Cookies on this site.** Regular activity lowers the risk of several conditions over time and is worth doing.',
+    ),
+    'Regular activity lowers the risk of several conditions over time and is worth doing.',
+  );
+
+  // Nothing usable returns nothing, so the card falls back to title and link.
+  for (const junk of ['', 'tiny', 'Home | About | Contact | Privacy', '## Heading only']) {
+    assert.equal(cleanSnippet(junk), '', `accepted junk: ${junk}`);
+  }
+
+  // Markdown never reaches the page.
+  const out = cleanSnippet(
+    '# Title' + NL + 'Eating more vegetables is **associated** with lower rates of [heart disease](https://x.y) in large studies.',
+  );
+  assert.ok(!/[#*`\[\]]|https?:/.test(out), `markdown survived: ${out}`);
+});

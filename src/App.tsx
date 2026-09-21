@@ -5,7 +5,7 @@ import type { Session } from './session';
 import { useIdentity } from './useIdentity';
 import { useDocumentMeta, useRoute } from './router';
 import { APP_ROUTES, type Route } from './site';
-import Gate from './components/Gate';
+import type { Me } from './types';
 import Consent from './components/Consent';
 import ConditionPicker from './components/ConditionPicker';
 import Today from './components/Today';
@@ -14,7 +14,9 @@ import MailSettings from './components/MailSettings';
 import Profile from './components/Profile';
 import Nav from './components/Nav';
 import SiteFooter from './components/SiteFooter';
-import { About, Contact, Faq, Home, NotFound, Privacy, Terms } from './components/Pages';
+import { About, Contact, Faq, NotFound, Privacy, Terms } from './components/Pages';
+import Landing from './components/Landing';
+import Start from './components/Start';
 import SignIn from './components/SignIn';
 import { Disclaimer, Mark } from './components/Brand';
 
@@ -49,10 +51,10 @@ export default function App() {
     go('/');
   };
 
-  const onboard = (next: Session) => {
-    identity.adopt(next);
-    go('/today');
-  };
+  // Setup is finished when there is consent and at least one condition.
+  // Until then the app would be three empty cards and a board with no
+  // rows, which is what /start exists to avoid.
+  const onboarded = Boolean(session && me && isOnboarded(me));
 
   // The mark always goes to the front door. It used to go to Today,
   // which is a tab, so tapping the logo inside the app went nowhere.
@@ -106,14 +108,38 @@ export default function App() {
     );
   }
 
-  if (!session) {
+  // The marketing home never mounts a tab, a check-in or a crawl result.
+  if (route === '/') {
     return (
-      <Shell route={route} go={go} home={home} signedIn={false}>
-        {route === '/' ? (
-          <Home go={(to) => go(to)} />
-        ) : (
-          <Gate onReady={onboard} />
-        )}
+      <Shell route={route} go={go} home={home} signedIn={authed} bare>
+        <Landing go={go} authed={authed} hasHousehold={onboarded} />
+      </Shell>
+    );
+  }
+
+  if (route === '/start') {
+    return (
+      <Shell route={route} go={go} home={home} signedIn={authed} bare>
+        <Start
+          session={session}
+          me={me ?? null}
+          onSession={(next) => identity.adopt(next)}
+          onDone={() => go('/today')}
+        />
+      </Shell>
+    );
+  }
+
+  // Anything else in the app needs a finished setup behind it.
+  if (!session || (me !== undefined && me !== null && !isOnboarded(me))) {
+    return (
+      <Shell route={route} go={go} home={home} signedIn={authed} bare>
+        <Start
+          session={session}
+          me={me ?? null}
+          onSession={(next) => identity.adopt(next)}
+          onDone={() => go('/today')}
+        />
       </Shell>
     );
   }
@@ -127,16 +153,13 @@ export default function App() {
   }
   if (me === null) {
     return (
-      <Shell route={route} go={go} home={home} signedIn={false}>
-        <Gate onReady={onboard} />
-      </Shell>
-    );
-  }
-
-  if (me.needsConsent) {
-    return (
-      <Shell route={route} go={go} home={home} signedIn>
-        <Consent memberId={session.memberId} />
+      <Shell route={route} go={go} home={home} signedIn={authed} bare>
+        <Start
+          session={null}
+          me={null}
+          onSession={(next) => identity.adopt(next)}
+          onDone={() => go('/today')}
+        />
       </Shell>
     );
   }
@@ -176,12 +199,18 @@ export default function App() {
   );
 }
 
+/** Consent given, and at least one condition chosen. */
+function isOnboarded(me: Me): boolean {
+  return !me.needsConsent && me.conditions.length > 0;
+}
+
 function Shell({
   route,
   go,
   home,
   signedIn,
   app = false,
+  bare = false,
   children,
 }: {
   route: Route;
@@ -189,6 +218,7 @@ function Shell({
   home: Route;
   signedIn: boolean;
   app?: boolean;
+  bare?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -196,7 +226,7 @@ function Shell({
       <a className="skip" href="#main">
         Skip to content
       </a>
-      {!app && (
+      {!app && !bare && (
         <header className="chrome">
           <button className="home" onClick={() => go(home)} aria-label="Preventah, go home">
             <Mark />
@@ -209,7 +239,7 @@ function Shell({
           )}
         </header>
       )}
-      <main className={app ? 'wrap wide' : 'wrap'} id="main">
+      <main className={app ? 'wrap wide' : bare ? 'wrap bare' : 'wrap'} id="main">
         {children}
         {!app && <SiteFooter go={go} />}
       </main>

@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth (Password, plus Google when configured)
 - **AI models:** gpt-5-nano, falling back to gpt-4.1-nano then gpt-4o-mini
 - **Started:** 2026-09-19T17:58:00Z
-- **Last updated:** 2026-09-21T17:15:00Z
+- **Last updated:** 2026-09-21T18:05:00Z
 
 ## Log
 
@@ -318,3 +318,41 @@ its description.
 Rendered at 390 and 1280: one h1 per route, the mark loading rather than
 alt-texting, forms present on both auth routes, no horizontal scroll, no tap
 target under 44px, no page errors. 47 tests pass.
+
+### 2026-09-21 - working tree
+Split the landing page from the app, which is the root of the complaint that
+Today looked like a landing page: `/` was the app, so there was no landing
+page to look at. `/` is now marketing only and never mounts a tab, a check-in
+or a crawl result. The app entry is `/app`, onboarding is `/start`, and both
+are exact GET routes like every other path.
+
+`/start` is four steps, one visible at a time, and the step is derived from
+what exists rather than from a counter, so a reload lands back where it left
+off. Household or solo, consent, the name the board uses, then at least one
+condition with the selected rail on the same screen. Nobody reaches Today
+until all four are done, which is what stops the first Today anyone sees from
+being three cards drawn from nothing.
+
+The landing is a hero with an original SVG character, three how-it-works
+windows and an ink band of three cards. The character is inline SVG with
+CSS-only motion: a four second breath, an occasional blink, and the check
+drawing itself once. No three.js, no Lottie, no runtime animation library;
+reduced motion gets a static pose with the tick already drawn. The whole
+bundle is 361 KB.
+
+Two bugs fixed on the way. "5 of 3 done today" was real: the count was every
+check-in row under today's key, and yesterday's action ids survive a plan
+rotation or a change of conditions, so it could exceed three. It now counts
+only rows matching today's three. And Firecrawl descriptions were rendered
+raw, so markdown headings, link syntax and "Skip to main content" could reach
+the page; `convex/lib/snippet.ts` now accepts only something that reads like a
+sentence and returns nothing otherwise, and the UI shows title and link alone
+when there is nothing clean to show.
+
+Sign in and Sign up left the tab row: they belong on the marketing home and on
+their own routes, not crowding the five destinations someone uses daily. Sign
+out stays, because it is the way out.
+
+Rendered at 390 and 1280: one h1 per route, no Today content on `/`, character
+present, no horizontal scroll, no tap target under 44px, no page errors. 47
+tests pass.

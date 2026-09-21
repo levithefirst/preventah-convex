@@ -56,14 +56,20 @@ export default function Sources({
 
       {status && <p className="muted">{status}</p>}
 
-      {cards?.map((card) => (
-        <div className="source" key={card.url}>
-          <a href={card.url} target="_blank" rel="noreferrer">
-            {card.title}
-          </a>
-          <p className="muted">{card.snippet}</p>
-        </div>
-      ))}
+      {/* Title, one clean sentence when there is one, and the link.
+          The server strips markdown and page furniture; anything that
+          did not survive that simply shows as title and link. */}
+      <div className="sourceCards">
+        {cards?.map((card) => (
+          <article className="sourceCard" key={card.url}>
+            <h3>{card.title}</h3>
+            {card.snippet && <p className="muted">{card.snippet}</p>}
+            <a href={card.url} target="_blank" rel="noreferrer">
+              Open the source
+            </a>
+          </article>
+        ))}
+      </div>
     </section>
   );
 }

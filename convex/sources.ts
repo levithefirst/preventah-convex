@@ -2,6 +2,7 @@ import { action, internalMutation, internalQuery, query } from './_generated/ser
 import { v } from 'convex/values';
 import { internal } from './_generated/api';
 import { getCondition, conditionName } from './lib/conditionIndex';
+import { cleanSnippet } from './lib/snippet';
 
 /**
  * Firecrawl source cards.
@@ -181,7 +182,7 @@ export const refresh = action({
       cards.push({
         title: typeof item.title === 'string' && item.title ? item.title : conditionName(args.conditionId),
         url,
-        snippet: typeof item.description === 'string' ? item.description : '',
+        snippet: cleanSnippet(typeof item.description === 'string' ? item.description : ''),
       });
       if (cards.length === 5) break;
     }

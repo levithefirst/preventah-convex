@@ -70,6 +70,8 @@ export const setProfile = mutation({
     memberId: v.id('members'),
     email: v.union(v.string(), v.null()),
     timezone: v.optional(v.string()),
+    /** What the board calls you. Set during onboarding and editable after. */
+    name: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -77,11 +79,13 @@ export const setProfile = mutation({
     if (!member) return null;
 
     const email = args.email?.trim() ?? null;
-    const patch: { email: string | null; timezone?: string } = {
+    const patch: { email: string | null; timezone?: string; name?: string } = {
       // Shape check only. The real proof an address works is a delivered mail.
       email: email && /^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(email) ? email : null,
     };
     if (args.timezone && isValidTimezone(args.timezone)) patch.timezone = args.timezone;
+    const name = args.name?.trim();
+    if (name) patch.name = name.slice(0, 40);
 
     await ctx.db.patch(args.memberId, patch);
     return null;
@@ -224,7 +228,12 @@ export const today = query({
       }),
       isBaseline: plan.isBaseline,
       actions,
-      doneCount: done.length,
+      // Only today's three can count towards today's three. A raw row
+      // count could exceed it: conditions change, the plan rotates, and
+      // yesterday's ids are still sitting in the table under this day
+      // key, which is how "5 of 3 done today" happened.
+      doneCount: done.filter((row) => actions.some((action) => action.id === row.actionId))
+        .length,
       rewrite: row ? row.rewrite : null,
       model: row ? row.model : null,
     };

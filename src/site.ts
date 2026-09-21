@@ -21,6 +21,13 @@ export const CONTACT_EMAIL = 'TODO_SET_CONTACT_EMAIL';
 export const hasContactEmail = () => !CONTACT_EMAIL.startsWith('TODO_');
 
 export const APP_ROUTES = ['/today', '/conditions', '/board', '/mail', '/profile'] as const;
+
+/**
+ * The app's front door and its onboarding, kept out of APP_ROUTES so the
+ * tab row never shows them. `/app` lands on Today; `/start` is the four
+ * step wizard someone sees instead of an empty Today.
+ */
+export const FLOW_ROUTES = ['/app', '/start'] as const;
 export const PUBLIC_ROUTES = ['/about', '/faq', '/privacy', '/terms', '/contact'] as const;
 
 /** Account routes. Public, but not part of the site footer. */
@@ -29,9 +36,17 @@ export const AUTH_ROUTES = ['/signin', '/signup'] as const;
 export type AppRoute = (typeof APP_ROUTES)[number];
 export type PublicRoute = (typeof PUBLIC_ROUTES)[number];
 export type AuthRoute = (typeof AUTH_ROUTES)[number];
-export type Route = '/' | AppRoute | PublicRoute | AuthRoute | '/404';
+export type FlowRoute = (typeof FLOW_ROUTES)[number];
+export type Route = '/' | AppRoute | PublicRoute | AuthRoute | FlowRoute | '/404';
 
-export const ALL_ROUTES: Route[] = ['/', ...APP_ROUTES, ...PUBLIC_ROUTES, ...AUTH_ROUTES, '/404'];
+export const ALL_ROUTES: Route[] = [
+  '/',
+  ...APP_ROUTES,
+  ...PUBLIC_ROUTES,
+  ...AUTH_ROUTES,
+  ...FLOW_ROUTES,
+  '/404',
+];
 
 export function isRoute(path: string): path is Route {
   return (ALL_ROUTES as string[]).includes(path);
@@ -102,6 +117,15 @@ export const META: Record<Route, Meta> = {
     title: 'Create an account — Preventah',
     description:
       'Create a Preventah account with Google or an email address, and start a household or join one.',
+  },
+  '/app': {
+    title: "Today — Preventah",
+    description: "Today's three prevention actions for your household.",
+  },
+  '/start': {
+    title: 'Set up Preventah',
+    description:
+      'Start a household or join one, agree to what is stored, and pick the conditions that run in your family.',
   },
   '/404': {
     title: 'Page not found — Preventah',

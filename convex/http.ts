@@ -21,6 +21,8 @@ const PAGE_ROUTES = [
   '/contact',
   '/signin',
   '/signup',
+  '/app',
+  '/start',
   '/404',
 ] as const;
 
