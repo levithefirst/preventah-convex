@@ -19,6 +19,8 @@ const PAGE_ROUTES = [
   '/privacy',
   '/terms',
   '/contact',
+  '/signin',
+  '/signup',
   '/404',
 ] as const;
 

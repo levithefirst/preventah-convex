@@ -6,24 +6,29 @@ import { api } from '../../convex/_generated/api';
 /**
  * Sign up, sign in, and Google.
  *
- * Nothing renders until the deployment reports that it can actually sign
- * a session. The keys live on the deployment rather than in the repo, so
- * between this code shipping and the init-auth workflow being run there
- * is a window where a sign-in button would throw; during it the app
- * keeps working the way it did before accounts existed.
+ * The form is always shown. An earlier version hid itself until the
+ * deployment reported it could sign a session, which meant the only
+ * visible symptom of a missing key was a missing page: worse than a
+ * form that says it is warming up. Google is still conditional, because
+ * a provider that is genuinely not configured fails at the redirect with
+ * nothing useful to show.
  */
-export default function SignIn() {
+export default function SignIn({
+  mode: initialMode,
+  onSwitch,
+}: {
+  mode: 'signUp' | 'signIn';
+  onSwitch: (to: 'signUp' | 'signIn') => void;
+}) {
   const { signIn } = useAuthActions();
   const status = useQuery(api.authStatus.status, {});
 
-  const [mode, setMode] = useState<'signUp' | 'signIn'>('signUp');
+  const [mode, setMode] = useState<'signUp' | 'signIn'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | 'password' | 'google'>(null);
-
-  if (status === undefined || !status.ready) return null;
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -48,7 +53,14 @@ export default function SignIn() {
     <section className="window plated roomy" id="signin">
       <p className="bar cream">{mode === 'signUp' ? 'Create an account' : 'Sign in'}</p>
 
-      {status.googleReady && (
+      {status !== undefined && !status.ready && (
+        <p className="note" role="status">
+          Account signing is warming up on this deployment. The form works as soon as it is
+          ready; if a sign-in fails right now, that is why.
+        </p>
+      )}
+
+      {status?.googleReady && (
         <>
           <button
             className="btn block"
@@ -141,8 +153,10 @@ export default function SignIn() {
       <button
         className="link"
         onClick={() => {
-          setMode(mode === 'signUp' ? 'signIn' : 'signUp');
+          const next = mode === 'signUp' ? 'signIn' : 'signUp';
+          setMode(next);
           setError(null);
+          onSwitch(next);
         }}
       >
         {mode === 'signUp' ? 'I already have an account' : 'Create an account instead'}

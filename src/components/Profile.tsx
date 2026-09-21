@@ -19,11 +19,13 @@ export default function Profile({
   householdId,
   onLeave,
   authed,
+  go,
 }: {
   me: Me;
   householdId: Id<'households'>;
   onLeave: () => void;
   authed: boolean;
+  go: (to: '/signin' | '/signup' | '/') => void;
 }) {
   const board = useQuery(api.households.board, { householdId });
   const account = useQuery(api.account.me, authed ? {} : 'skip');
@@ -103,21 +105,29 @@ export default function Profile({
             <p className="tiny">
               Your email is set by the account you signed in with and is not editable here.
             </p>
-            <button className="btn" onClick={() => void signOut()}>
+            <button className="btn" onClick={() => void signOut().finally(() => go('/'))}>
               Sign out
             </button>
           </>
-        ) : status?.ready ? (
-          <p className="muted">
-            You are not signed in, so this browser is the only thing that remembers you. Clearing
-            site data would mean rejoining with the code. Sign in from the home page to attach
-            this household to an account.
-          </p>
         ) : (
-          <p className="muted">
-            Accounts are not switched on for this deployment yet, so this browser is the only
-            thing that remembers you. Clearing site data means rejoining with the code.
-          </p>
+          <>
+            <p className="muted">
+              You are not signed in, so this browser is the only thing that remembers you.
+              Clearing site data would mean rejoining with the code. Signing in attaches this
+              household to an account and keeps it.
+            </p>
+            {status !== undefined && !status.ready && (
+              <p className="tiny">Account signing is still warming up on this deployment.</p>
+            )}
+            <div className="btnRow">
+              <button className="btn primary" onClick={() => go('/signin')}>
+                Sign in
+              </button>
+              <button className="btn" onClick={() => go('/signup')}>
+                Sign up
+              </button>
+            </div>
+          </>
         )}
       </div>
     </section>

@@ -54,9 +54,9 @@ export default function App() {
     go('/today');
   };
 
-  // Where the mark points. Today once there is a household, otherwise the
-  // front door.
-  const home: Route = session ? '/today' : '/';
+  // The mark always goes to the front door. It used to go to Today,
+  // which is a tab, so tapping the logo inside the app went nowhere.
+  const home: Route = '/';
 
   const publicPage = (() => {
     switch (route) {
@@ -70,6 +70,26 @@ export default function App() {
         return <Terms />;
       case '/contact':
         return <Contact go={go} />;
+      case '/signin':
+        return (
+          <>
+            <h1>Welcome back.</h1>
+            <SignIn
+              mode="signIn"
+              onSwitch={(to) => go(to === 'signUp' ? '/signup' : '/signin')}
+            />
+          </>
+        );
+      case '/signup':
+        return (
+          <>
+            <h1>Create your account.</h1>
+            <SignIn
+              mode="signUp"
+              onSwitch={(to) => go(to === 'signUp' ? '/signup' : '/signin')}
+            />
+          </>
+        );
       case '/404':
         return <NotFound go={go} />;
       default:
@@ -90,10 +110,7 @@ export default function App() {
     return (
       <Shell route={route} go={go} home={home} signedIn={false}>
         {route === '/' ? (
-          <>
-            <Home go={(to) => go(to)} />
-            <SignIn />
-          </>
+          <Home go={(to) => go(to)} />
         ) : (
           <Gate onReady={onboard} />
         )}
@@ -133,7 +150,13 @@ export default function App() {
       case '/mail':
         return <MailSettings me={me} />;
       case '/profile':
-        return <Profile me={me} householdId={session.householdId} onLeave={leave} authed={authed} />;
+        return <Profile
+            me={me}
+            householdId={session.householdId}
+            onLeave={leave}
+            authed={authed}
+            go={go}
+          />;
       default:
         return <Today me={me} />;
     }
@@ -143,7 +166,7 @@ export default function App() {
 
   return (
     <Shell route={current} go={go} home={home} signedIn app>
-      <Nav route={current} go={go} home={home} />
+      <Nav route={current} go={go} authed={authed} />
       <p className="chromeMeta">
         {me.name} &middot; {me.dayKey} &middot; {me.doneCount} of 3 done today
       </p>

@@ -28,7 +28,7 @@ const HTTP_ROUTES = readFileSync(new URL('../convex/http.ts', import.meta.url), 
 /** The client routes convex/http.ts serves the shell for. */
 const PAGE_ROUTES = [
   '/today', '/conditions', '/board', '/mail', '/profile',
-  '/about', '/faq', '/privacy', '/terms', '/contact', '/404',
+  '/about', '/faq', '/privacy', '/terms', '/contact', '/signin', '/signup', '/404',
 ];
 
 /** Mirrors the registration in convex/http.ts, against the real router. */

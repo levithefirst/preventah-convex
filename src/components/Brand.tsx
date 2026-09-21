@@ -7,11 +7,22 @@ import { useEffect, useState } from 'react';
  * here that grows into a marketing header is working against that.
  */
 
-export function Mark() {
+/**
+ * The Preventah mark: a cream window with a mint calendar stripe, an
+ * offset blush plate and a bold ink P. Decorative rather than labelled,
+ * because the wordmark beside it already says the name and the control
+ * wrapping both carries its own label.
+ */
+export function Mark({ size = 44 }: { size?: number }) {
   return (
-    <span className="mark" aria-hidden="true">
-      P
-    </span>
+    <img
+      className="mark"
+      src="/brand/preventah-mark.svg"
+      alt=""
+      width={size}
+      height={size}
+      style={{ width: size, height: size }}
+    />
   );
 }
 

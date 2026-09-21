@@ -139,7 +139,18 @@ export const today = query({
       timezone: v.string(),
       dayKey: v.string(),
       maxSelections: v.number(),
-      conditions: v.array(v.object({ id: v.string(), name: v.string(), category: v.string() })),
+      conditions: v.array(
+        v.object({
+          id: v.string(),
+          name: v.string(),
+          category: v.string(),
+          // Carried so the Conditions screen can link a source for what
+          // you track without re-querying the catalog, and without the
+          // list changing when you happen to be searching.
+          sourceName: v.string(),
+          sourceUrl: v.string(),
+        }),
+      ),
       isBaseline: v.boolean(),
       actions: v.array(action),
       doneCount: v.number(),
@@ -201,11 +212,16 @@ export const today = query({
       timezone: member.timezone,
       dayKey,
       maxSelections: MAX_SELECTIONS,
-      conditions: member.conditionIds.map((id) => ({
-        id,
-        name: conditionName(id),
-        category: getCondition(id)?.category ?? 'other',
-      })),
+      conditions: member.conditionIds.map((id) => {
+        const entry = getCondition(id);
+        return {
+          id,
+          name: conditionName(id),
+          category: entry?.category ?? 'other',
+          sourceName: entry?.sourceName ?? '',
+          sourceUrl: entry?.sourceUrl ?? '',
+        };
+      }),
       isBaseline: plan.isBaseline,
       actions,
       doneCount: done.length,

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CONTACT_EMAIL, PURPOSE, REPO, hasContactEmail, type Route } from '../site';
+import { Mark } from './Brand';
 
 /**
  * The public pages.
@@ -9,26 +10,58 @@ import { CONTACT_EMAIL, PURPOSE, REPO, hasContactEmail, type Route } from '../si
  * a template: if a table is added, that page is the one that changes.
  */
 
+/**
+ * The signed-out front door.
+ *
+ * One hero window carrying the mark, the purpose line and the four
+ * things you can do, built from the same parts as every other window: a
+ * hard ink edge, an offset blush plate, and a mint tab instead of a
+ * full-width bar. It is the only hero in the product; every other screen
+ * gets straight to work.
+ */
 export function Home({ go }: { go: (to: Route) => void }) {
   return (
     <>
-      <h1>{PURPOSE}</h1>
-      <p className="lede">
-        A family history is a household fact, so prevention is a household activity. Pick the
-        conditions that run in yours, get one thing to eat, one to move and one to keep, and check
-        one off. Everyone else sees it straight away.
-      </p>
+      <section className="window plated hero">
+        <span className="heroTab">Daily prevention</span>
 
-      <div className="btnRow" style={{ marginTop: 18 }}>
-        <button className="btn primary" onClick={() => go('/today')}>
-          Start
-        </button>
-        <button className="btn" onClick={() => go('/about')}>
-          What this is
-        </button>
-      </div>
+        <div className="heroMark">
+          <Mark size={72} />
+          <span className="heroWord">Preventah</span>
+        </div>
 
-      <section className="window plated" style={{ marginTop: 20 }}>
+        <h1>{PURPOSE}</h1>
+        <p className="lede">
+          A family history is a household fact, so prevention is a household activity. Pick the
+          conditions that run in yours, get one thing to eat, one to move and one to keep, and
+          check one off. Everyone else sees it straight away.
+        </p>
+
+        <div className="btnRow heroCtas">
+          <button className="btn primary" onClick={() => go('/today')}>
+            Start
+          </button>
+          <button className="btn" onClick={() => go('/signin')}>
+            Sign in
+          </button>
+        </div>
+
+        <p className="heroLinks">
+          <button className="link" onClick={() => go('/signup')}>
+            Sign up
+          </button>
+          <span aria-hidden="true"> &middot; </span>
+          <button className="link" onClick={() => go('/about')}>
+            What this is
+          </button>
+        </p>
+
+        <p className="pillRow">
+          <span className="pill">No ads &middot; no trackers</span>
+        </p>
+      </section>
+
+      <section className="window">
         <p className="bar cream">How it works</p>
         <ol className="steps">
           <li>

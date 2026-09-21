@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth (Password, plus Google when configured)
 - **AI models:** gpt-5-nano, falling back to gpt-4.1-nano then gpt-4o-mini
 - **Started:** 2026-09-19T17:58:00Z
-- **Last updated:** 2026-09-21T16:40:00Z
+- **Last updated:** 2026-09-21T17:15:00Z
 
 ## Log
 
@@ -280,3 +280,41 @@ The deployed site was fine because CI passes the variable through
 `--cmd-url-env-var-name`, but the committed `convex/siteAssets.ts` had been a
 217 KB shell rather than the app. A tracked `.env` holding the public
 deployment URL fixes it; the bundle is now 350 KB and contains the product.
+
+### 2026-09-21 - working tree
+Account chrome, a landing window, and the selected-conditions rail.
+
+The mark now goes to `/` from every screen. It used to go to Today, which is
+a tab, so tapping the logo inside the app moved you sideways and never out:
+that is why it felt broken. Sign in and Sign up sit in the header and the
+phone menu when signed out, Sign out when signed in, and Profile's signed-out
+state is two buttons instead of a paragraph telling you something you cannot
+act on.
+
+`/signin` and `/signup` are real routes with their own exact GET in
+`convex/http.ts`. The form is always rendered now. The earlier version hid
+itself until the deployment reported it could sign a session, which meant a
+missing key showed up as a missing page; it now says account signing is
+warming up and leaves the form where you can see it. Google stays conditional,
+because a provider that is genuinely unconfigured fails at the redirect with
+nothing useful to show.
+
+Conditions leads with what you track rather than burying it in a hundred
+cards: an "On your list" rail with Remove on each, then a Get help window
+carrying the catalog's own source link per selected condition, then the
+catalog with the selected ids filtered out so nothing appears twice. Get help
+publishes no helpline and no clinic: anything a source says about seeking care
+stays on the source's page, where it stays accurate. Fixing it properly meant
+carrying `sourceName` and `sourceUrl` on `members.today`'s conditions, because
+resolving them from the search results made the list shrink as you typed.
+
+The landing is one hero window in the existing tokens: mint folder tab, cream
+body, hard ink edge, offset blush plate, one pill. The mark is now a real
+drawing at `public/brand/preventah-mark.svg`, a cream window with a mint
+calendar stripe, blush offset and a bold ink P, drawn as paths so no font has
+to load. No image file came through with the brief, so it was recreated from
+its description.
+
+Rendered at 390 and 1280: one h1 per route, the mark loading rather than
+alt-texting, forms present on both auth routes, no horizontal scroll, no tap
+target under 44px, no page errors. 47 tests pass.

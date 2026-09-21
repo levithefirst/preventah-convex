@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
+import { useAuthActions } from '@convex-dev/auth/react';
 import { APP_ROUTES, type Route } from '../site';
 import { Mark } from './Brand';
 
 /**
  * The signed-in header.
  *
- * The mark and the wordmark are a link home, which is the bug this
- * replaced: there was previously no way back except leaving the
- * household. On a phone the five destinations collapse into one Menu
- * button rather than wrapping into a broken row, and the menu is
- * keyboard-usable: Escape closes it and focus returns to the button.
+ * The mark and wordmark go Home, at `/`, on every screen. They used to go
+ * to Today, which is why tapping them felt broken: Today is a tab, and a
+ * logo that lands on a tab gives you no way out of the app.
+ *
+ * Account actions sit with the destinations rather than buried in
+ * Profile. On a phone the whole set collapses into one Menu that closes
+ * on Escape and returns focus to its button.
  */
 
 const LABEL: Record<string, string> = {
@@ -23,12 +26,13 @@ const LABEL: Record<string, string> = {
 export default function Nav({
   route,
   go,
-  home,
+  authed,
 }: {
   route: Route;
   go: (to: Route) => void;
-  home: Route;
+  authed: boolean;
 }) {
+  const { signOut } = useAuthActions();
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -62,10 +66,15 @@ export default function Nav({
     go(to);
   };
 
+  const leave = () => {
+    setOpen(false);
+    void signOut().finally(() => go('/'));
+  };
+
   return (
     <header className="chrome sticky">
-      <button className="home" onClick={() => go(home)} aria-label="Preventah, go home">
-        <Mark />
+      <button className="home" onClick={() => go('/')} aria-label="Preventah, go home">
+        <Mark size={40} />
         <span className="wordmark">Preventah</span>
       </button>
 
@@ -93,6 +102,20 @@ export default function Nav({
             {LABEL[path]}
           </button>
         ))}
+        {authed ? (
+          <button className="tab" onClick={leave}>
+            Sign out
+          </button>
+        ) : (
+          <>
+            <button className="tab" onClick={() => go('/signin')}>
+              Sign in
+            </button>
+            <button className="tab" onClick={() => go('/signup')}>
+              Sign up
+            </button>
+          </>
+        )}
       </nav>
 
       {open && (
@@ -108,6 +131,20 @@ export default function Nav({
               {LABEL[path]}
             </button>
           ))}
+          {authed ? (
+            <button className="menuItem" role="menuitem" onClick={leave}>
+              Sign out
+            </button>
+          ) : (
+            <>
+              <button className="menuItem" role="menuitem" onClick={() => visit('/signin')}>
+                Sign in
+              </button>
+              <button className="menuItem" role="menuitem" onClick={() => visit('/signup')}>
+                Sign up
+              </button>
+            </>
+          )}
         </div>
       )}
     </header>

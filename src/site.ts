@@ -23,11 +23,15 @@ export const hasContactEmail = () => !CONTACT_EMAIL.startsWith('TODO_');
 export const APP_ROUTES = ['/today', '/conditions', '/board', '/mail', '/profile'] as const;
 export const PUBLIC_ROUTES = ['/about', '/faq', '/privacy', '/terms', '/contact'] as const;
 
+/** Account routes. Public, but not part of the site footer. */
+export const AUTH_ROUTES = ['/signin', '/signup'] as const;
+
 export type AppRoute = (typeof APP_ROUTES)[number];
 export type PublicRoute = (typeof PUBLIC_ROUTES)[number];
-export type Route = '/' | AppRoute | PublicRoute | '/404';
+export type AuthRoute = (typeof AUTH_ROUTES)[number];
+export type Route = '/' | AppRoute | PublicRoute | AuthRoute | '/404';
 
-export const ALL_ROUTES: Route[] = ['/', ...APP_ROUTES, ...PUBLIC_ROUTES, '/404'];
+export const ALL_ROUTES: Route[] = ['/', ...APP_ROUTES, ...PUBLIC_ROUTES, ...AUTH_ROUTES, '/404'];
 
 export function isRoute(path: string): path is Route {
   return (ALL_ROUTES as string[]).includes(path);
@@ -89,6 +93,15 @@ export const META: Record<Route, Meta> = {
     title: 'Contact Preventah',
     description:
       'Preventah has no office and no phone line. How to reach the project, and what the in-app mail tab does instead.',
+  },
+  '/signin': {
+    title: 'Sign in — Preventah',
+    description: 'Sign in to Preventah with Google or with an email address and password.',
+  },
+  '/signup': {
+    title: 'Create an account — Preventah',
+    description:
+      'Create a Preventah account with Google or an email address, and start a household or join one.',
   },
   '/404': {
     title: 'Page not found — Preventah',
