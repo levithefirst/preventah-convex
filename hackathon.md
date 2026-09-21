@@ -8,11 +8,11 @@
 - **Frontend:** Convex static hosting
 - **Convex deployment:** https://qualified-hummingbird-614.convex.cloud
 - **Components:** none
-- **Convex features:** schema, tables, indexes, queries, mutations, actions, internal functions, HTTP actions, crons, realtime queries
+- **Convex features:** schema, tables, indexes, queries, mutations, actions, internal functions, HTTP actions, crons, realtime queries, static site routes
 - **Auth:** none
 - **AI models:** gpt-5-nano, falling back to gpt-4.1-nano then gpt-4o-mini
 - **Started:** 2026-09-19T17:58:00Z
-- **Last updated:** 2026-09-21T03:05:00Z
+- **Last updated:** 2026-09-21T16:04:00Z
 
 ## Log
 
@@ -198,3 +198,49 @@ Updating them caught a bad edit of my own: removing the tier block from
 which would have shipped a rewrite layer with its safety gate silently
 removed. The tests failed on invented drugs and diagnosis wording, which is
 precisely what they are for.
+
+### 2026-09-21 - working tree
+Navigation, a public site, and solo use as a household of one. Accounts are
+not in this entry; see below.
+
+The mark and wordmark are now a button that goes home, which was the bug worth
+fixing: there had been no way back except leaving the household. A small
+history router covers twelve paths, each registered as its own exact GET in
+`convex/http.ts` so a reload or a shared link lands where it points. Still no
+`pathPrefix: "/"`. On a phone the five destinations collapse into one Menu
+that closes on Escape and returns focus to its button; from 641px they sit in
+the header. Every page gained a skip link.
+
+Solo is two labels on one model, not a second codepath. "Just me" and "Start a
+household" call the same mutation and write the same rows; the only difference
+is whether the join code is shown large or folded under "Invite family later".
+A household of one gets the same Today, the same board with one row on it, and
+the same everything else. Profile is a real screen now, and it is where
+leaving lives rather than the footer.
+
+Public pages written to match the code rather than a template: `/about` says
+what this is not, `/faq` answers eight real questions, `/privacy` lists every
+stored field taken from the schema and names each processor and what it
+receives, `/terms` is honest about being a hackathon project, and `/contact`
+says there is no office and publishes no invented address. Plus `/404`,
+`robots.txt`, `sitemap.xml`, `llms.txt`, a web manifest, `security.txt`, and
+icons and a 1200x630 Open Graph card generated from the existing P mark in
+Outfit. Unique title, description and canonical per public route. No
+analytics, no pixels, no cookie banner, because there is nothing non-essential
+to consent to.
+
+Verified by rendering every public route at 390px: one h1 each, distinct
+title, description and canonical, no horizontal scroll, no tap target under
+44px, skip link and home button present. 47 tests pass, including new ones
+asserting that `convex/http.ts` and `src/site.ts` agree on the route list and
+that every crawler-facing file is embedded and routed.
+
+Accounts are not shipped. `@convex-dev/auth` signs tokens with a keypair its
+init CLI generates and writes to the deployment as `JWT_PRIVATE_KEY` and
+`JWKS`; the server calls `requireEnv("JWT_PRIVATE_KEY")` at runtime and throws
+without it. That CLI needs Convex deployment access, which this build
+environment's network policy blocks, and the keys cannot be invented. Shipping
+auth-gated queries without them would have left a working app that nobody
+could sign in to, so identity is still this browser and Profile says so
+plainly. The Google button is not in the build either: it is gated on
+`AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`, and no client secret was fabricated.

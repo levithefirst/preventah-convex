@@ -25,11 +25,20 @@ const HTTP_ROUTES = readFileSync(new URL('../convex/http.ts', import.meta.url), 
   .filter((line) => line.trimStart().startsWith('http.route('))
   .join('\n');
 
+/** The client routes convex/http.ts serves the shell for. */
+const PAGE_ROUTES = [
+  '/today', '/conditions', '/board', '/mail', '/profile',
+  '/about', '/faq', '/privacy', '/terms', '/contact', '/404',
+];
+
 /** Mirrors the registration in convex/http.ts, against the real router. */
 function buildRouter() {
   const http = httpRouter();
   const handler = { isHttp: true, isRegistered: true } as never;
   http.route({ path: '/', method: 'GET', handler });
+  for (const path of PAGE_ROUTES) {
+    http.route({ path, method: 'GET', handler });
+  }
   http.route({ pathPrefix: '/assets/', method: 'GET', handler });
   for (const path of Object.keys(SITE_ASSETS)) {
     if (path === '/' || path.startsWith('/assets/')) continue;
@@ -63,6 +72,36 @@ test('the index and every fingerprinted asset resolve', () => {
   assert.notEqual(http.lookup(INDEX_PATH, 'GET'), null, `${INDEX_PATH} is not routed`);
   for (const key of Object.keys(SITE_ASSETS)) {
     assert.notEqual(http.lookup(key, 'GET'), null, `${key} is not routed`);
+  }
+});
+
+test('every client route is served, so a reload does not 404', () => {
+  const http = buildRouter();
+  for (const path of PAGE_ROUTES) {
+    const match = http.lookup(path, 'GET');
+    assert.notEqual(match, null, `${path} is not routed`);
+    assert.equal(match![2], path, `${path} did not match an exact route`);
+  }
+});
+
+test('http.ts and the client agree on the route list', () => {
+  const http = readFileSync(new URL('../convex/http.ts', import.meta.url), 'utf8');
+  const site = readFileSync(new URL('../src/site.ts', import.meta.url), 'utf8');
+  for (const path of PAGE_ROUTES) {
+    assert.ok(http.includes(`'${path}'`), `convex/http.ts does not register ${path}`);
+    if (path !== '/404') {
+      assert.ok(site.includes(`'${path}'`), `src/site.ts does not know ${path}`);
+    }
+  }
+});
+
+test('the public files a crawler asks for are embedded and routed', () => {
+  const http = buildRouter();
+  for (const path of ['/robots.txt', '/sitemap.xml', '/llms.txt', '/manifest.webmanifest',
+                      '/og.png', '/favicon-32.png', '/icon-192.png', '/icon-512.png',
+                      '/apple-touch-icon.png']) {
+    assert.ok(path in SITE_ASSETS, `${path} is not embedded: run npm run build`);
+    assert.notEqual(http.lookup(path, 'GET'), null, `${path} is not routed`);
   }
 });
 

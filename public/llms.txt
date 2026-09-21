@@ -1,0 +1,53 @@
+# Preventah All Gas
+
+> Three prevention actions a day, for a household. Pick the conditions a
+> family history is relevant to, and get one thing to eat, one to move and
+> one to keep, each carrying the public-health source it came from.
+
+Live: https://qualified-hummingbird-614.convex.site
+Source: https://github.com/levithefirst/preventah-convex
+Built for: the Convex All Gas Hackathon
+
+## Not medical advice
+
+Preventah offers general lifestyle guidance of the kind public-health
+bodies publish for the whole population. It does not diagnose, predict,
+treat or monitor any condition, and it is not a substitute for a
+clinician. A family history raises the value of prevention and of a
+conversation with one; it does not mean anyone will develop a condition.
+
+## Public pages
+
+- /            the purpose, and how it works
+- /about       what it is and, more usefully, what it is not
+- /faq         consent, join codes, sources, email, solo use, data
+- /privacy     every field stored, written from the schema
+- /terms       hackathon project, no warranty, acceptable use
+- /contact     no office, no phone; the repository is the way in
+
+## App screens (a household is required; not useful to index)
+
+- /today       the day's three actions and the check-in
+- /conditions  the catalog picker
+- /board       the live household board
+- /mail        the optional morning plan
+- /profile     name, household, join code, leaving
+
+## How it works
+
+Conditions carry tags. Guidance items carry the same tags. An action is
+shown when the two intersect, which is why a catalog of 100+ conditions
+shares one curated body of guidance. Resolving a day is pure and
+synchronous: the same selections and the same date always produce the
+same three actions.
+
+Sources are the World Health Organization, the NHS, the CDC and
+MedlinePlus. A language model may tighten the wording of a title once a
+day; it cannot introduce a drug, a dose, a lab test or a URL, and
+anything that tries is rejected in favour of the original copy.
+
+## What is not here
+
+No advertising, no trackers, no analytics pixels, no cookie banner, no
+wearables, no data sold, and no free-text field anywhere that could
+become part of a health record.

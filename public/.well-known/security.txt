@@ -1,0 +1,4 @@
+Expires: 2027-09-21T00:00:00.000Z
+Contact: https://qualified-hummingbird-614.convex.site/contact
+Preferred-Languages: en
+Canonical: https://qualified-hummingbird-614.convex.site/.well-known/security.txt

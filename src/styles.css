@@ -430,3 +430,159 @@ input:not([type]) {
     scroll-behavior: auto !important;
   }
 }
+
+/* ===================================================== navigation + site */
+
+/* First tab stop on every page. Hidden until focused. */
+.skip {
+  position: absolute;
+  left: 8px;
+  top: -60px;
+  z-index: 20;
+  padding: 12px 16px;
+  background: var(--cream);
+  border: var(--edge);
+  border-radius: 10px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: top var(--fill) ease;
+}
+.skip:focus { top: 8px; }
+
+/* The mark and wordmark are one control, and that control goes home. */
+.home {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 2px 6px 2px 2px;
+  background: none;
+  border: 0;
+  border-radius: 10px;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.home:hover .wordmark { text-decoration: underline; text-underline-offset: 3px; }
+
+.screenName {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 15px;
+  margin-left: auto;
+}
+
+.menuButton { margin-left: 10px; }
+
+/* Phone: one Menu button. Desktop: the five destinations in the header. */
+.desktopTabs { display: none; }
+
+@media (min-width: 641px) {
+  .menuButton, .screenName { display: none; }
+  .desktopTabs {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    margin: 8px 0 0;
+  }
+  .desktopTabs .tab { flex: 1 1 auto; font-size: 14px; padding: 9px 8px; }
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% - 6px);
+  right: calc(16px + var(--plate));
+  z-index: 12;
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  background: var(--cream);
+  border: var(--edge);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--plate) var(--plate) 0 0 var(--blush), var(--plate) var(--plate) 0 2px var(--ink);
+}
+.menuItem {
+  min-height: 48px;
+  padding: 12px 16px;
+  text-align: left;
+  background: var(--cream);
+  border: 0;
+  border-bottom: var(--edge);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--fill) ease;
+}
+.menuItem:last-child { border-bottom: 0; }
+.menuItem:hover { background: #fffaf2; }
+.menuItem[aria-current='page'] { background: var(--mint); }
+
+.chrome.sticky { position: sticky; }
+
+/* -------------------------------------------------------- gate choices */
+
+.choices { display: grid; gap: 8px; margin: 16px 0; }
+@media (min-width: 640px) { .choices { grid-template-columns: repeat(3, 1fr); } }
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 44px;
+  padding: 13px;
+  text-align: left;
+  background: var(--cream);
+  border: var(--edge);
+  border-radius: 10px;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  transition: background-color var(--fill) ease, transform var(--press) ease;
+}
+.choice:hover { background: #fffaf2; }
+.choice:active { transform: translate(1px, 1px); }
+.choice[aria-pressed='true'] { background: var(--mint); }
+.choiceLabel { font-family: var(--font-title); font-weight: 800; font-size: 16px; }
+.choiceHint { font-size: 13px; color: var(--ink-soft); }
+.choice[aria-pressed='true'] .choiceHint { color: var(--ink); }
+
+/* ------------------------------------------------------------- content */
+
+.steps { padding-left: 20px; margin: 8px 0; }
+.steps li { margin-bottom: 10px; }
+
+.pairs { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 8px 0 0; }
+.pairs dt { font-size: 14px; color: var(--ink-soft); }
+.pairs dd { margin: 0; font-weight: 600; }
+
+.fold { margin-top: 12px; border-top: var(--edge); padding-top: 10px; }
+.fold summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.code.small { font-size: 28px; letter-spacing: 0.1em; }
+
+.footLinks { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 10px; }
+
+/* A spinner that says "working" without moving for anyone who asked it not to. */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  vertical-align: -2px;
+  border: 2px solid var(--ink);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+ul { padding-left: 20px; }
+li { margin-bottom: 6px; }

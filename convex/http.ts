@@ -3,6 +3,25 @@ import { httpAction } from './_generated/server';
 import { INDEX_PATH, SITE_ASSETS } from './siteAssets';
 
 /**
+ * The client routes. Each is registered below as an exact GET that
+ * serves the SPA shell, so a reload or a shared link lands on the page
+ * it names instead of a 404. Keep this in step with src/site.ts.
+ */
+const PAGE_ROUTES = [
+  '/today',
+  '/conditions',
+  '/board',
+  '/mail',
+  '/profile',
+  '/about',
+  '/faq',
+  '/privacy',
+  '/terms',
+  '/contact',
+  '/404',
+] as const;
+
+/**
  * The deployment serves its own frontend.
  *
  * `*.convex.site` is the HTTP-router domain, so putting the SPA behind
@@ -32,7 +51,9 @@ function decode(base64: string): ArrayBuffer {
 
 const serve = httpAction(async (_ctx, request) => {
   const { pathname } = new URL(request.url);
-  const key = pathname === '/' ? INDEX_PATH : pathname;
+  // A client route has no file of its own: it is the shell plus a path.
+  const isPage = pathname === '/' || (PAGE_ROUTES as readonly string[]).includes(pathname);
+  const key = isPage ? INDEX_PATH : pathname;
   const asset = SITE_ASSETS[key];
 
   if (!asset) {
@@ -50,7 +71,8 @@ const serve = httpAction(async (_ctx, request) => {
   const immutable = key.startsWith('/assets/');
 
   return new Response(decode(asset.base64), {
-    status: 200,
+    // /404 is the shell, but it should not claim the page exists.
+    status: pathname === '/404' ? 404 : 200,
     headers: {
       'Content-Type': asset.contentType,
       'Cache-Control': immutable ? 'public, max-age=31536000, immutable' : 'no-cache',
@@ -60,6 +82,13 @@ const serve = httpAction(async (_ctx, request) => {
 
 // The root, which serves the index.
 http.route({ path: '/', method: 'GET', handler: serve });
+
+// Every client route, each exact. This is longer than a catch-all and
+// that is the point: `pathPrefix: '/'` is what left the deployment
+// answering "No content found" at the root.
+for (const path of PAGE_ROUTES) {
+  http.route({ path, method: 'GET', handler: serve });
+}
 
 // Everything Vite fingerprints. A prefix here is safe: it is not the root.
 http.route({ pathPrefix: '/assets/', method: 'GET', handler: serve });

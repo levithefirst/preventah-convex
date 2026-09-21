@@ -1,0 +1,47 @@
+# Preventah All Gas
+# Public pages are open to crawlers and to AI agents. The app screens
+# behind them hold household data and are not useful to index.
+
+User-agent: *
+Allow: /$
+Allow: /about
+Allow: /faq
+Allow: /privacy
+Allow: /terms
+Allow: /contact
+Allow: /llms.txt
+Disallow: /today
+Disallow: /conditions
+Disallow: /board
+Disallow: /mail
+Disallow: /profile
+
+User-agent: GPTBot
+Allow: /$
+Allow: /about
+Allow: /faq
+Allow: /privacy
+Allow: /terms
+Allow: /contact
+Allow: /llms.txt
+Disallow: /today
+Disallow: /conditions
+Disallow: /board
+Disallow: /mail
+Disallow: /profile
+
+User-agent: ClaudeBot
+Allow: /$
+Allow: /about
+Allow: /faq
+Allow: /privacy
+Allow: /terms
+Allow: /contact
+Allow: /llms.txt
+Disallow: /today
+Disallow: /conditions
+Disallow: /board
+Disallow: /mail
+Disallow: /profile
+
+Sitemap: https://qualified-hummingbird-614.convex.site/sitemap.xml

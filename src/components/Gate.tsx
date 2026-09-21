@@ -2,40 +2,45 @@ import { useState } from 'react';
 import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { saveSession, type Session } from '../session';
-import { CopyButton, Mark } from './Brand';
+import { CopyButton } from './Brand';
 
 /**
- * The Gate is the hero.
+ * Choosing how you start.
  *
- * There is no landing page above it and no marketing screen in front of
- * the product: the first thing anyone sees states the job in one sentence
- * and offers the two things they can actually do. From here it is consent,
- * then a check-in. Three taps.
+ * Three labels, one model. "Just me" and "Start a household" call the
+ * same mutation and write the same rows; solo is a household of one, so
+ * there is no second codepath, no mode flag and no screen that hides the
+ * board. The only difference is whether the join code is shown large or
+ * folded away until someone wants it.
  */
+
+type Mode = 'solo' | 'household' | 'join';
+
+const MODES: { mode: Mode; label: string; hint: string }[] = [
+  { mode: 'solo', label: 'Just me', hint: 'A household of one. Add family whenever you like.' },
+  { mode: 'household', label: 'Start a household', hint: 'Get a code and share it with the house.' },
+  { mode: 'join', label: 'Join with a code', hint: 'Someone already started one.' },
+];
+
 export default function Gate({ onReady }: { onReady: (session: Session) => void }) {
   const create = useMutation(api.households.create);
   const join = useMutation(api.households.join);
 
-  const [mode, setMode] = useState<'create' | 'join'>('create');
+  const [mode, setMode] = useState<Mode>('solo');
   const [householdName, setHouseholdName] = useState('');
   const [memberName, setMemberName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [created, setCreated] = useState<{ session: Session; joinCode: string } | null>(null);
+  const [created, setCreated] = useState<{ session: Session; joinCode: string; solo: boolean } | null>(
+    null,
+  );
 
   async function submit() {
     setBusy(true);
     setError(null);
     try {
-      if (mode === 'create') {
-        const result = await create({ householdName, memberName });
-        const session = { memberId: result.memberId, householdId: result.householdId };
-        saveSession(session);
-        // Hold here rather than jumping straight in: the code is the one
-        // thing a second person needs, and it is easiest to share now.
-        setCreated({ session, joinCode: result.joinCode });
-      } else {
+      if (mode === 'join') {
         const result = await join({ joinCode, memberName });
         if (!result.ok) {
           setError(result.reason);
@@ -44,7 +49,20 @@ export default function Gate({ onReady }: { onReady: (session: Session) => void 
         const session = { memberId: result.memberId, householdId: result.householdId };
         saveSession(session);
         onReady(session);
+        return;
       }
+
+      const solo = mode === 'solo';
+      const name = solo
+        ? `${memberName.trim() || 'My'}${/s$/i.test(memberName.trim()) ? "'" : "'s"} plan`
+        : householdName;
+      const result = await create({ householdName: name, memberName });
+      const session = { memberId: result.memberId, householdId: result.householdId };
+      saveSession(session);
+      setCreated({ session, joinCode: result.joinCode, solo });
+    } catch {
+      // The typed inputs survive a failed submit: nothing is cleared here.
+      setError('That did not go through. Check your connection and try again.');
     } finally {
       setBusy(false);
     }
@@ -52,71 +70,80 @@ export default function Gate({ onReady }: { onReady: (session: Session) => void 
 
   if (created) {
     return (
-      <main className="wrap stack">
-        <div className="chrome">
-          <Mark />
-          <span className="wordmark">Preventah</span>
-        </div>
+      <>
+        <h1>{created.solo ? "You're set up." : 'Your household is open.'}</h1>
 
-        <h1>Your household is open.</h1>
-
-        <section className="window plated roomy">
-          <p className="bar mint">Join code</p>
-          <p className="code">{created.joinCode}</p>
-          <div className="codeRow">
-            <CopyButton value={created.joinCode} label="Copy code" />
-          </div>
-          <p className="muted">
-            Anyone in the house uses this to join. It is not a password: treat it like a door
-            number, not a key, and only give it to people you would hand the front door to.
-          </p>
-        </section>
+        {created.solo ? (
+          <section className="window plated roomy">
+            <p className="bar mint">Ready</p>
+            <p>
+              Everything works the same as it does for a family: the same three actions, the same
+              board, with one row on it. Nobody else can see it.
+            </p>
+            <details className="fold">
+              <summary>Invite family later</summary>
+              <p className="muted">
+                This is your join code. Anyone who types it joins your household and appears on
+                the board. You do not need it to use the app yourself.
+              </p>
+              <div className="codeRow">
+                <span className="code small">{created.joinCode}</span>
+                <CopyButton value={created.joinCode} label="Copy code" />
+              </div>
+            </details>
+          </section>
+        ) : (
+          <section className="window plated roomy">
+            <p className="bar mint">Join code</p>
+            <p className="code">{created.joinCode}</p>
+            <div className="codeRow">
+              <CopyButton value={created.joinCode} label="Copy code" />
+            </div>
+            <p className="muted">
+              Anyone in the house uses this to join. It is how you enter a household, not how you
+              sign in: treat it like a door number, and give it only to people you would let in.
+            </p>
+          </section>
+        )}
 
         <button className="btn primary block" onClick={() => onReady(created.session)}>
-          Continue
+          Go to today
         </button>
-
-        <p className="tiny pinBottom">
-          General lifestyle guidance from public-health sources. Not medical advice.
-        </p>
-      </main>
+      </>
     );
   }
 
-  return (
-    <main className="wrap stack">
-      <div className="chrome">
-        <Mark />
-        <span className="wordmark">Preventah</span>
-      </div>
+  const soloOrHousehold = mode !== 'join';
 
+  return (
+    <>
       <h1>Three prevention actions a day, for a household.</h1>
       <p className="lede">
         Pick the conditions that run in your family. Get one thing to eat, one to move and one to
         keep. Check one off and the rest of the house sees it.
       </p>
 
-      <div className="tabs" role="group" aria-label="Start or join">
-        <button
-          className="tab"
-          aria-current={mode === 'create' ? 'page' : undefined}
-          onClick={() => setMode('create')}
-        >
-          Start a household
-        </button>
-        <button
-          className="tab"
-          aria-current={mode === 'join' ? 'page' : undefined}
-          onClick={() => setMode('join')}
-        >
-          Join with a code
-        </button>
+      <div className="choices" role="group" aria-label="How do you want to start?">
+        {MODES.map((option) => (
+          <button
+            key={option.mode}
+            className="choice"
+            aria-pressed={mode === option.mode}
+            onClick={() => {
+              setMode(option.mode);
+              setError(null);
+            }}
+          >
+            <span className="choiceLabel">{option.label}</span>
+            <span className="choiceHint">{option.hint}</span>
+          </button>
+        ))}
       </div>
 
       <section className="window plated roomy">
-        <p className="bar cream">{mode === 'create' ? 'New household' : 'Join a household'}</p>
+        <p className="bar cream">{MODES.find((m) => m.mode === mode)?.label}</p>
 
-        {mode === 'create' ? (
+        {mode === 'household' && (
           <label className="field" htmlFor="householdName">
             <span>Household name</span>
             <input
@@ -126,7 +153,9 @@ export default function Gate({ onReady }: { onReady: (session: Session) => void 
               placeholder="Ours"
             />
           </label>
-        ) : (
+        )}
+
+        {mode === 'join' && (
           <label className="field" htmlFor="joinCode">
             <span>Join code</span>
             <input
@@ -138,6 +167,7 @@ export default function Gate({ onReady }: { onReady: (session: Session) => void 
               autoComplete="off"
               autoCapitalize="characters"
               spellCheck={false}
+              aria-describedby={error ? 'gateError' : undefined}
             />
           </label>
         )}
@@ -153,18 +183,28 @@ export default function Gate({ onReady }: { onReady: (session: Session) => void 
           />
         </label>
 
-        {error && <p className="alert">{error}</p>}
+        {error && (
+          <p className="alert" id="gateError" role="alert">
+            {error}
+          </p>
+        )}
 
         <button className="btn primary block" disabled={busy} onClick={() => void submit()}>
-          {busy ? 'Working...' : mode === 'create' ? 'Create household' : 'Join household'}
+          {busy ? (
+            <>
+              <span className="spinner" aria-hidden="true" /> Working
+            </>
+          ) : soloOrHousehold ? (
+            'Create and continue'
+          ) : (
+            'Join household'
+          )}
         </button>
       </section>
 
-      <p className="tiny pinBottom">
-        No account, no password. A code in the browser is all that keeps you signed in, which is
-        enough for a kitchen table and is not a security boundary. General lifestyle guidance
-        from public-health sources, not medical advice.
+      <p className="tiny">
+        A join code is how you enter a household, not how you sign in.
       </p>
-    </main>
+    </>
   );
 }
