@@ -1,0 +1,60 @@
+name: auth-doctor
+
+# Read-only. This runs from GitHub because the environment this project
+# is developed in cannot reach *.convex.site or *.convex.dev, so it is
+# the only place the deployment can actually be questioned.
+#
+# It sets nothing and rotates nothing. Everything it prints is either a
+# boolean or an address the site already serves publicly.
+on:
+  workflow_dispatch:
+
+jobs:
+  doctor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+
+      - name: What the site says about itself
+        run: |
+          SITE=https://qualified-hummingbird-614.convex.site
+          echo "--- GET /.well-known/openid-configuration"
+          curl -sS -o cfg.json -w 'status=%{http_code}\n' "$SITE/.well-known/openid-configuration" || true
+          node -e "
+            const fs = require('fs');
+            try {
+              const c = JSON.parse(fs.readFileSync('cfg.json', 'utf8'));
+              console.log('issuer      =', c.issuer);
+              console.log('jwks_uri    =', c.jwks_uri);
+            } catch { console.log('body was not JSON:', fs.readFileSync('cfg.json','utf8').slice(0,200)); }
+          "
+          echo "--- GET /.well-known/jwks.json"
+          curl -sS -o jwks.json -w 'status=%{http_code}\n' "$SITE/.well-known/jwks.json" || true
+          # Public keys only, and only their shape: never the modulus.
+          node -e "
+            const fs = require('fs');
+            try {
+              const j = JSON.parse(fs.readFileSync('jwks.json', 'utf8'));
+              console.log('keys        =', (j.keys||[]).length);
+              for (const k of j.keys||[]) console.log('  kty=%s use=%s alg=%s kid=%s', k.kty, k.use, k.alg, k.kid ?? '(none)');
+            } catch { console.log('body was not JSON:', fs.readFileSync('jwks.json','utf8').slice(0,200)); }
+          "
+          echo "--- GET / (the SPA still serving itself)"
+          curl -sS -o /dev/null -w 'status=%{http_code}\n' "$SITE/" || true
+          echo "--- GET /api/auth/signin (expected 404 unless OAuth is configured)"
+          curl -sS -o /dev/null -w 'status=%{http_code}\n' "$SITE/api/auth/signin" || true
+          echo "--- GET /signin (a page route)"
+          curl -sS -o /dev/null -w 'status=%{http_code}\n' "$SITE/signin" || true
+
+      - name: Does the deployment accept the tokens it issues
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: |
+          npx convex run authHealth:report '{}' \
+            || npx convex run authHealth:report '{}' --prod
