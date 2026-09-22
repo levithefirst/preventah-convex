@@ -57,9 +57,27 @@ export default function App() {
   // rows, which is what /start exists to avoid.
   const onboarded = Boolean(session && me && isOnboarded(me));
 
+  // Where a freshly signed-in person belongs. Onboarding if their setup
+  // is unfinished, the app if it is not.
+  const afterSignIn = (): Route => (onboarded ? '/today' : '/start');
+
+  // Identity has settled once auth has resolved and, where there is a
+  // member, its day has loaded too. Bouncing before that would send an
+  // onboarded person to /start for a frame.
+  const settled = !identity.loading && (!session || me !== undefined);
+
   // The mark always goes to the front door. It used to go to Today,
   // which is a tab, so tapping the logo inside the app went nowhere.
   const home: Route = '/';
+
+  // Someone who already has a session has no business looking at the
+  // sign-in form. This is the other half of the bug where a successful
+  // sign-in left you staring at the page you had just used.
+  useEffect(() => {
+    if (!authed || !settled) return;
+    if (route !== '/signin' && route !== '/signup') return;
+    go(onboarded ? '/today' : '/start');
+  }, [authed, settled, route, onboarded, go]);
 
   const publicPage = (() => {
     switch (route) {
@@ -80,6 +98,7 @@ export default function App() {
             <SignIn
               mode="signIn"
               onSwitch={(to) => go(to === 'signUp' ? '/signup' : '/signin')}
+              onSignedIn={() => go(afterSignIn())}
             />
           </>
         );
@@ -90,6 +109,7 @@ export default function App() {
             <SignIn
               mode="signUp"
               onSwitch={(to) => go(to === 'signUp' ? '/signup' : '/signin')}
+              onSignedIn={() => go(afterSignIn())}
             />
           </>
         );

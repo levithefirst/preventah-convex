@@ -70,13 +70,14 @@ export default function Start({
   const join = useMutation(api.households.join);
   const invite = readInvite();
   const claimed = useRef(false);
+  const [skipAccount, setSkipAccount] = useState(false);
 
   // An account is the first step, but only where the deployment can
   // actually sign one. If it cannot, requiring an account would lock
   // everybody out of their own app, so the flow falls back to the way it
   // worked before accounts existed.
   const accountsUsable = status?.ready ?? false;
-  const needsAccount = accountsUsable && !authed;
+  const needsAccount = accountsUsable && !authed && !skipAccount;
 
   // An invite link adds you to that household instead of asking which
   // shape you want. It is consumed once, and only once there is an
@@ -129,7 +130,9 @@ export default function Start({
         ))}
       </div>
 
-      {step === 1 && <StepAccount go={go} invited={Boolean(invite)} />}
+      {step === 1 && (
+        <StepAccount go={go} invited={Boolean(invite)} onSkip={() => setSkipAccount(true)} />
+      )}
       {step === 2 && <StepShape onSession={onSession} />}
       {step === 3 && session && <StepConsent memberId={session.memberId} />}
       {step === 4 && session && me && <StepName me={me} />}
@@ -141,11 +144,21 @@ export default function Start({
 /**
  * The account gate.
  *
- * Nothing about a household is created until there is somewhere durable
- * to hang it, because a household that lives only in one browser is one
- * cleared cache away from gone.
+ * An account is the better answer, because a household that lives only
+ * in one browser is one cleared cache away from gone. It is not a wall,
+ * though: if signing in is failing, being unable to reach your own app
+ * is a worse outcome than a household this browser has to remember. The
+ * way through stays open and says plainly what it costs.
  */
-function StepAccount({ go, invited }: { go: (to: Route) => void; invited: boolean }) {
+function StepAccount({
+  go,
+  invited,
+  onSkip,
+}: {
+  go: (to: Route) => void;
+  invited: boolean;
+  onSkip: () => void;
+}) {
   return (
     <section className="window plated roomy">
       <p className="bar cream">Sign in or create an account</p>
@@ -162,6 +175,14 @@ function StepAccount({ go, invited }: { go: (to: Route) => void; invited: boolea
           Sign in
         </button>
       </div>
+
+      <p className="tiny" style={{ marginTop: 16 }}>
+        Trouble signing in?{' '}
+        <button className="link" onClick={onSkip}>
+          Continue without an account
+        </button>{' '}
+        &mdash; the household will live in this browser only, and clearing site data will lose it.
+      </p>
     </section>
   );
 }

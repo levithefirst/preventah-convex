@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth (Password, plus Google when configured)
 - **AI models:** gpt-5-nano, falling back to gpt-4.1-nano then gpt-4o-mini
 - **Started:** 2026-09-19T17:58:00Z
-- **Last updated:** 2026-09-21T21:15:00Z
+- **Last updated:** 2026-09-22T09:00:00Z
 
 ## Log
 
@@ -445,3 +445,30 @@ replaced by the invite link. One guard worth naming: the account step is only
 required where the deployment reports it can sign a session, since requiring
 an account the deployment cannot issue would lock everyone out of their own
 app.
+
+### 2026-09-22 - working tree
+Sign-in did nothing and said nothing. Three separate faults stacked.
+
+A sign-in that succeeded never left the page, so success and failure looked
+identical. It navigates now, to `/start` when setup is unfinished and `/today`
+when it is not, and anyone who arrives at `/signin` or `/signup` with a session
+already is bounced the same way instead of being shown a form they do not need.
+
+A sign-in that failed showed a guess about what had probably gone wrong. It
+shows what the server actually said, and where that is empty or unreadable it
+says so plainly rather than inventing a cause.
+
+The third was the one that made it look dead. A Convex action queues until the
+client has a connection, so with the deployment unreachable `signIn` neither
+resolves nor rejects: no navigation, no error, and a button disabled forever
+because the `finally` never ran. Reproduced in a browser against an unreachable
+deployment, and confirmed fixed: sign-in now runs against a twenty second
+deadline, and a stuck attempt returns a real sentence.
+
+`/start` no longer treats the account as a wall. If signing in is failing,
+being locked out of your own app is worse than a household this browser has to
+remember, so there is a way past that says plainly what it costs.
+
+The password rule is on the form rather than only in the input's validation,
+and the header's signed-in state already read Convex Auth rather than the
+household session.

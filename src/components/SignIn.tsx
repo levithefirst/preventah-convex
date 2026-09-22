@@ -6,19 +6,68 @@ import { api } from '../../convex/_generated/api';
 /**
  * Sign up, sign in, and Google.
  *
- * The form is always shown. An earlier version hid itself until the
- * deployment reported it could sign a session, which meant the only
- * visible symptom of a missing key was a missing page: worse than a
- * form that says it is warming up. Google is still conditional, because
- * a provider that is genuinely not configured fails at the redirect with
- * nothing useful to show.
+ * Two things this has to get right, both of which it previously got
+ * wrong. A sign-in that succeeds must leave the page: staying on the
+ * form is indistinguishable from nothing happening. And a sign-in that
+ * fails must say what went wrong in the words the server used, rather
+ * than a guess about what probably happened, because a guess that is
+ * wrong sends someone hunting for a problem they do not have.
+ *
+ * Google is conditional on the deployment reporting it configured. The
+ * password form never is.
  */
+
+/**
+ * How long to wait before calling a sign-in stuck.
+ *
+ * A Convex action queues until the client has a connection, so when the
+ * deployment is unreachable `signIn` neither resolves nor rejects: it
+ * simply never settles. That is the whole of "it does nothing and shows
+ * no error" — there was no error to show, and no result either. A
+ * deadline turns silence into a sentence.
+ */
+const SIGN_IN_TIMEOUT_MS = 20_000;
+
+function withDeadline<T>(work: Promise<T>): Promise<T> {
+  return Promise.race([
+    work,
+    new Promise<never>((_resolve, reject) =>
+      setTimeout(
+        () =>
+          reject(
+            new Error(
+              'That took too long and may not have reached the server. Check your connection and try again.',
+            ),
+          ),
+        SIGN_IN_TIMEOUT_MS,
+      ),
+    ),
+  ]);
+}
+
+/** Whatever the error actually was, as something a person can read. */
+function messageFrom(error: unknown): string {
+  const raw =
+    error instanceof Error
+      ? error.message
+      : typeof error === 'string'
+        ? error
+        : String(error);
+  const text = raw.trim();
+  if (text.length === 0 || text === '[object Object]') {
+    return 'Sign-in failed, and the server gave no reason. Try again in a moment.';
+  }
+  return text;
+}
 export default function SignIn({
   mode: initialMode,
   onSwitch,
+  onSignedIn,
 }: {
   mode: 'signUp' | 'signIn';
   onSwitch: (to: 'signUp' | 'signIn') => void;
+  /** Called once a session exists, so the caller can leave this page. */
+  onSignedIn: () => void;
 }) {
   const { signIn } = useAuthActions();
   const status = useQuery(api.authStatus.status, {});
@@ -37,13 +86,10 @@ export default function SignIn({
     try {
       // The inputs are deliberately not cleared on failure: retyping a
       // password because the network blinked is its own small insult.
-      await signIn('password', { email, password, name, flow: mode });
-    } catch {
-      setError(
-        mode === 'signUp'
-          ? 'That did not work. The address may already have an account, or the password may be too short.'
-          : 'That email and password did not match an account.',
-      );
+      await withDeadline(signIn('password', { email, password, name, flow: mode }));
+      onSignedIn();
+    } catch (err) {
+      setError(messageFrom(err));
     } finally {
       setBusy(null);
     }
@@ -68,10 +114,17 @@ export default function SignIn({
             onClick={() => {
               setError(null);
               setBusy('google');
-              void signIn('google').catch(() => {
-                setError('Google sign-in did not complete.');
-                setBusy(null);
-              });
+              // A redirect provider usually navigates away before this
+              // resolves; when it does come back, it is a real session.
+              void withDeadline(signIn('google'))
+                .then(() => {
+                  setBusy(null);
+                  onSignedIn();
+                })
+                .catch((err: unknown) => {
+                  setError(messageFrom(err));
+                  setBusy(null);
+                });
             }}
           >
             {busy === 'google' ? (
@@ -126,9 +179,12 @@ export default function SignIn({
             autoComplete={mode === 'signUp' ? 'new-password' : 'current-password'}
             required
             minLength={8}
-            aria-describedby={error ? 'authError' : undefined}
+            aria-describedby={error ? 'authError passwordRule' : 'passwordRule'}
           />
         </label>
+        <p className="tiny" id="passwordRule">
+          At least 8 characters.
+        </p>
 
         {error && (
           <p className="alert" id="authError" role="alert">
