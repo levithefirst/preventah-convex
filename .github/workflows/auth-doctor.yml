@@ -57,3 +57,12 @@ jobs:
       # a deploy key and is not granted runInternalActions.
       - name: Does the deployment accept the tokens it issues
         run: node scripts/authProbe.mjs
+
+      # The one question the deployment cannot answer about itself: what
+      # the browser sees. ConvexReactClient logs the server's reason for
+      # refusing a token and nothing else reports it.
+      - name: Sign up on the live site in a real browser
+        run: |
+          npm i --no-save playwright
+          npx playwright install --with-deps chromium
+          node scripts/browserProbe.mjs
