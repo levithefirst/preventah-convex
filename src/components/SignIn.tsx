@@ -19,18 +19,19 @@ import { ORIGIN } from '../site';
  */
 
 /**
- * Whether this page is being served from somewhere other than the origin
- * the deployment signs for.
+ * Whether this page is being served from the origin the deployment signs
+ * for.
  *
  * A cookie set for one origin does not come back on another, which looks
  * from the outside exactly like a sign-in that worked and then did not
- * count. Read only: this reports the mismatch and changes nothing. The
- * origin is already public in the bundle, so nothing here is a secret,
- * and nothing here is printed either.
+ * count. The deployment reports its SITE_URL origin; where it has not
+ * answered yet, the origin the bundle was built for stands in. Read
+ * only: this compares two public addresses, reports a mismatch in one
+ * line, and changes nothing. Nothing is logged.
  */
-function originMatchesSite(): boolean {
+function originMatchesSite(siteOrigin: string | null | undefined): boolean {
   try {
-    return window.location.origin === new URL(ORIGIN).origin;
+    return window.location.origin === (siteOrigin ?? new URL(ORIGIN).origin);
   } catch {
     return true;
   }
@@ -139,7 +140,7 @@ export default function SignIn({
     <section className="window plated roomy" id="signin">
       <p className="bar cream">{mode === 'signUp' ? 'Create an account' : 'Sign in'}</p>
 
-      {!originMatchesSite() && (
+      {status !== undefined && !originMatchesSite(status.siteOrigin) && (
         <p className="note" role="status">
           This origin does not match SITE_URL. Signing in here may not stick.
         </p>
