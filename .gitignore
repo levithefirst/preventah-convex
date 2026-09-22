@@ -5,3 +5,6 @@ dist
 # public deployment URL the build needs, .env.local holds anything secret.
 .env.local
 .env.*.local
+
+# tsc -b writes these next to the configs; they are build state, not source.
+*.tsbuildinfo
