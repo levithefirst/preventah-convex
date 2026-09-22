@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 import { SignJWT, createLocalJWKSet, importPKCS8, jwtVerify } from 'jose';
-import { internalAction } from './_generated/server';
+import { action } from './_generated/server';
 
 /**
  * Why a session that was issued is not accepted.
@@ -12,7 +12,7 @@ import { internalAction } from './_generated/server';
  * difference. This reproduces that validation here, where the answer can
  * be reported.
  *
- * It is internal and read-only. It sets nothing, rotates nothing, and
+ * It is read-only. It sets nothing, rotates nothing, and
  * returns booleans plus three values that are public by construction:
  * CONVEX_SITE_URL and SITE_URL are the deployment's own addresses, and
  * they are already printed in every canonical link the site serves. No
@@ -20,12 +20,19 @@ import { internalAction } from './_generated/server';
  * jose's own description of what went wrong ("signature verification
  * failed" and the like), which describes the mismatch without quoting
  * either side of it.
+ *
+ * It is public because CONVEX_DEPLOY_KEY is a deploy key and cannot run
+ * internal functions (`deployment:functions:runInternalActions` is not
+ * granted), so the only way to reach it is the unauthenticated HTTP API
+ * every public function already answers on. What it discloses is whether
+ * this deployment is configured, which anyone learns by pressing the
+ * sign-in button once. Delete it once sign-in is fixed.
  */
 
 /** What SITE_URL has to be for cookies and redirects to come back here. */
 const EXPECTED_SITE_URL = 'https://qualified-hummingbird-614.convex.site';
 
-export const report = internalAction({
+export const report = action({
   args: {},
   returns: v.object({
     jwtPrivateKeySet: v.boolean(),

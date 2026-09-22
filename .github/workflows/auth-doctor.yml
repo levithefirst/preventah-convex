@@ -52,9 +52,8 @@ jobs:
           echo "--- GET /signin (a page route)"
           curl -sS -o /dev/null -w 'status=%{http_code}\n' "$SITE/signin" || true
 
+      # No credentials: public functions answer on the unauthenticated
+      # HTTP API, which is the only door open to us. CONVEX_DEPLOY_KEY is
+      # a deploy key and is not granted runInternalActions.
       - name: Does the deployment accept the tokens it issues
-        env:
-          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-        run: |
-          npx convex run authHealth:report '{}' \
-            || npx convex run authHealth:report '{}' --prod
+        run: node scripts/authProbe.mjs

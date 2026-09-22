@@ -65,6 +65,21 @@ function withDeadline<T>(work: Promise<T>): Promise<T> {
   ]);
 }
 
+/**
+ * What `signIn` returning actually means.
+ *
+ * `useAuthActions().signIn` resolves in three different situations and
+ * only one of them is a session: it returns `{ signingIn: true }` when
+ * tokens came back, `{ signingIn: false, redirect }` when the provider
+ * wants the browser sent elsewhere, and a bare `{ signingIn: false }`
+ * when the call succeeded but produced no tokens at all. Treating the
+ * promise resolving as success, which is what this did, reports the
+ * third case as a sign-in and then wonders why there is no session.
+ */
+function sessionStarted(result: { signingIn: boolean; redirect?: URL }): boolean {
+  return result.signingIn;
+}
+
 /** Whatever the error actually was, as something a person can read. */
 function messageFrom(error: unknown): string {
   const raw =
@@ -83,14 +98,11 @@ export default function SignIn({
   mode: initialMode,
   onSwitch,
   onSignedIn,
-  justAuthed,
 }: {
   mode: 'signUp' | 'signIn';
   onSwitch: (to: 'signUp' | 'signIn') => void;
   /** Called once a session exists, so the caller can leave this page. */
   onSignedIn: () => void;
-  /** True once a sign-in resolved during this visit. */
-  justAuthed: boolean;
 }) {
   const { signIn } = useAuthActions();
   const status = useQuery(api.authStatus.status, {});
@@ -109,31 +121,20 @@ export default function SignIn({
     try {
       // The inputs are deliberately not cleared on failure: retyping a
       // password because the network blinked is its own small insult.
-      await withDeadline(signIn('password', { email, password, name, flow: mode }));
+      const result = await withDeadline(
+        signIn('password', { email, password, name, flow: mode }),
+      );
+      if (!sessionStarted(result)) {
+        throw new Error(
+          'The server accepted that but did not start a session. Nothing is signed in yet.',
+        );
+      }
       onSignedIn();
     } catch (err) {
       setError(messageFrom(err));
     } finally {
       setBusy(null);
     }
-  }
-
-  // A sign-in that resolved is over, whether or not the client has
-  // caught up on it yet. Leaving the form up would say otherwise, and
-  // the whole complaint here was a form that looked untouched after it
-  // had worked. The caller navigates away on success; this is what
-  // stands in the moment before that, and if navigation is somehow
-  // blocked, the way on is a button rather than a dead end.
-  if (justAuthed) {
-    return (
-      <section className="window plated roomy" id="signin">
-        <p className="bar cream">Signed in</p>
-        <p>Your account is ready. Next, set up your plan.</p>
-        <button className="btn primary block" onClick={onSignedIn}>
-          Continue
-        </button>
-      </section>
-    );
   }
 
   return (
@@ -164,8 +165,15 @@ export default function SignIn({
               // A redirect provider usually navigates away before this
               // resolves; when it does come back, it is a real session.
               void withDeadline(signIn('google'))
-                .then(() => {
+                .then((result) => {
                   setBusy(null);
+                  // A redirect is not a failure: the browser is already
+                  // on its way to Google and this page is about to go.
+                  if (result.redirect !== undefined) return;
+                  if (!sessionStarted(result)) {
+                    setError('Google did not start a session. Nothing is signed in yet.');
+                    return;
+                  }
                   onSignedIn();
                 })
                 .catch((err: unknown) => {

@@ -17,7 +17,6 @@ import { Mark } from './Brand';
 export default function SiteHeader({
   go,
   signedIn,
-  justAuthed = false,
   hasHousehold,
   showHowItWorks = false,
   onSignOut,
@@ -29,8 +28,6 @@ export default function SiteHeader({
    * the same thing to a reader, and only one of them used to count.
    */
   signedIn: boolean;
-  /** A sign-in resolved on this page, so the way on is Continue. */
-  justAuthed?: boolean;
   hasHousehold: boolean;
   showHowItWorks?: boolean;
   /** Drops the browser's own session as well as the account's. */
@@ -65,8 +62,8 @@ export default function SiteHeader({
     };
   }, [open]);
 
-  const primaryLabel = justAuthed ? 'Continue' : hasHousehold ? 'Open app' : 'Start';
-  const primaryTo: Route = hasHousehold && !justAuthed ? '/app' : '/start';
+  const primaryLabel = hasHousehold ? 'Open app' : 'Start';
+  const primaryTo: Route = hasHousehold ? '/app' : '/start';
 
   const close = () => setOpen(false);
   const leave = () => {
