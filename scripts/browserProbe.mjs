@@ -28,6 +28,24 @@ page.on('pageerror', (error) => console_.push(`[pageerror] ${error.message}`));
 const interesting = () =>
   console_.filter((line) => /auth|token|websocket|convex|error|fail/i.test(line));
 
+const failures = [];
+
+/**
+ * The header contract, read off the rendered page: signed in means
+ * Profile and Sign out, and never an offer to sign in.
+ */
+async function check(where) {
+  const signIn = await page
+    .locator('button:text-is("Sign in"), a:text-is("Sign in")')
+    .count();
+  const profile = await page.locator('button:text-is("Profile")').count();
+  const signOut = await page.locator('button:text-is("Sign out")').count();
+  console.log(`checks (${where}): signIn=${signIn} profile=${profile} signOut=${signOut}`);
+  if (signIn > 0) failures.push(`"Sign in" offered while signed in on ${where}`);
+  if (profile === 0) failures.push(`no Profile on ${where}`);
+  if (signOut === 0) failures.push(`no Sign out on ${where}`);
+}
+
 /** Token presence only. The value never leaves the page. */
 async function state(label) {
   const storage = await page.evaluate(() => {
@@ -72,16 +90,53 @@ await page.click('button[type=submit]');
 await page.waitForTimeout(8000);
 await state('after submit');
 
-const error = await page.locator('#authError').innerText().catch(() => null);
+const error = await page
+  .locator('#authError')
+  .innerText({ timeout: 1000 })
+  .catch(() => null);
 console.log('form error     =', error ?? '(none)');
+
+// /start draws its own chrome rather than the site header, so the header
+// contract has to be read somewhere the site header actually renders.
+// This is the screen the complaint is about: signed in, and still being
+// offered a way to sign in.
+console.log('\n--- a page that renders the site header');
+await page.goto(SITE + '/about', { waitUntil: 'networkidle' });
+await page.waitForTimeout(4000);
+await state('signed in, on /about');
+await check('/about');
 
 console.log('\n--- hard reload');
 await page.reload({ waitUntil: 'networkidle' });
-await page.waitForTimeout(6000);
+await page.waitForTimeout(5000);
 await state('after reload');
+await check('/about after reload');
+
+// The demo hatch, in a browser that never signed in.
+console.log('\n--- a visitor with no account');
+const fresh = await browser.newContext();
+const freshPage = await fresh.newPage();
+await freshPage.goto(SITE + '/start', { waitUntil: 'networkidle' });
+await freshPage.waitForTimeout(4000);
+const freshBody = await freshPage.locator('body').innerText();
+const hatch = freshBody.includes('Continue without an account');
+console.log('account step shown    =', /Step 1 of 5/.test(freshBody));
+console.log('escape hatch present  =', hatch);
+if (!hatch) failures.push('"Continue without an account" is gone');
 
 console.log('\n--- console lines mentioning auth/convex/errors');
 for (const line of interesting()) console.log('  ', line.slice(0, 300));
 if (interesting().length === 0) console.log('   (none)');
 
 await browser.close();
+
+console.log('\n=== VERDICT');
+if (failures.length === 0) {
+  console.log('isAuthenticated after password?:  yes');
+  console.log('Reload still signed in?:          yes');
+  console.log('Continue without account still there?: yes');
+  console.log('Auth HTTP routes registered?:     yes');
+} else {
+  for (const failure of failures) console.log(' -', failure);
+  process.exit(1);
+}
