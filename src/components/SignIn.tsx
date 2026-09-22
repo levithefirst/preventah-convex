@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuthActions } from '@convex-dev/auth/react';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
+import { ORIGIN } from '../site';
 
 /**
  * Sign up, sign in, and Google.
@@ -16,6 +17,24 @@ import { api } from '../../convex/_generated/api';
  * Google is conditional on the deployment reporting it configured. The
  * password form never is.
  */
+
+/**
+ * Whether this page is being served from somewhere other than the origin
+ * the deployment signs for.
+ *
+ * A cookie set for one origin does not come back on another, which looks
+ * from the outside exactly like a sign-in that worked and then did not
+ * count. Read only: this reports the mismatch and changes nothing. The
+ * origin is already public in the bundle, so nothing here is a secret,
+ * and nothing here is printed either.
+ */
+function originMatchesSite(): boolean {
+  try {
+    return window.location.origin === new URL(ORIGIN).origin;
+  } catch {
+    return true;
+  }
+}
 
 /**
  * How long to wait before calling a sign-in stuck.
@@ -63,11 +82,14 @@ export default function SignIn({
   mode: initialMode,
   onSwitch,
   onSignedIn,
+  justAuthed,
 }: {
   mode: 'signUp' | 'signIn';
   onSwitch: (to: 'signUp' | 'signIn') => void;
   /** Called once a session exists, so the caller can leave this page. */
   onSignedIn: () => void;
+  /** True once a sign-in resolved during this visit. */
+  justAuthed: boolean;
 }) {
   const { signIn } = useAuthActions();
   const status = useQuery(api.authStatus.status, {});
@@ -95,9 +117,33 @@ export default function SignIn({
     }
   }
 
+  // A sign-in that resolved is over, whether or not the client has
+  // caught up on it yet. Leaving the form up would say otherwise, and
+  // the whole complaint here was a form that looked untouched after it
+  // had worked. The caller navigates away on success; this is what
+  // stands in the moment before that, and if navigation is somehow
+  // blocked, the way on is a button rather than a dead end.
+  if (justAuthed) {
+    return (
+      <section className="window plated roomy" id="signin">
+        <p className="bar cream">Signed in</p>
+        <p>Your account is ready. Next, set up your plan.</p>
+        <button className="btn primary block" onClick={onSignedIn}>
+          Continue
+        </button>
+      </section>
+    );
+  }
+
   return (
     <section className="window plated roomy" id="signin">
       <p className="bar cream">{mode === 'signUp' ? 'Create an account' : 'Sign in'}</p>
+
+      {!originMatchesSite() && (
+        <p className="note" role="status">
+          This origin does not match SITE_URL. Signing in here may not stick.
+        </p>
+      )}
 
       {status !== undefined && !status.ready && (
         <p className="note" role="status">

@@ -16,14 +16,25 @@ import { Mark } from './Brand';
  */
 export default function SiteHeader({
   go,
-  authed,
+  signedIn,
+  justAuthed = false,
   hasHousehold,
   showHowItWorks = false,
+  onSignOut,
 }: {
   go: (to: Route) => void;
-  authed: boolean;
+  /**
+   * Anyone the app is acting for: an account, a session this browser
+   * remembers, or a sign-in that resolved a moment ago. All three mean
+   * the same thing to a reader, and only one of them used to count.
+   */
+  signedIn: boolean;
+  /** A sign-in resolved on this page, so the way on is Continue. */
+  justAuthed?: boolean;
   hasHousehold: boolean;
   showHowItWorks?: boolean;
+  /** Drops the browser's own session as well as the account's. */
+  onSignOut?: () => void;
 }) {
   const { signOut } = useAuthActions();
   const [open, setOpen] = useState(false);
@@ -54,13 +65,16 @@ export default function SiteHeader({
     };
   }, [open]);
 
-  const primaryLabel = hasHousehold ? 'Open app' : 'Start';
-  const primaryTo: Route = hasHousehold ? '/app' : '/start';
+  const primaryLabel = justAuthed ? 'Continue' : hasHousehold ? 'Open app' : 'Start';
+  const primaryTo: Route = hasHousehold && !justAuthed ? '/app' : '/start';
 
   const close = () => setOpen(false);
   const leave = () => {
     close();
-    void signOut().finally(() => go('/'));
+    void signOut().finally(() => {
+      onSignOut?.();
+      go('/');
+    });
   };
 
   return (
@@ -87,7 +101,7 @@ export default function SiteHeader({
             How it works
           </a>
         )}
-        {authed ? (
+        {signedIn ? (
           <>
             <button className="navLink" onClick={() => go('/profile')}>
               Profile
@@ -118,7 +132,7 @@ export default function SiteHeader({
               How it works
             </a>
           )}
-          {authed ? (
+          {signedIn ? (
             <>
               <button
                 className="menuItem"

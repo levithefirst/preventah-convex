@@ -37,6 +37,16 @@ export default function App() {
   const identity = useIdentity();
   const { session, authed } = identity;
 
+  // A sign-in that resolved during this visit.
+  //
+  // `isAuthenticated` is the truth, but it is the truth a moment later:
+  // it goes true when the client has the token, which is after the call
+  // that got it came back. Anything drawn from `authed` alone therefore
+  // has a window where a person who has just signed in is shown the
+  // signed-out header, which reads as a sign-in that did not take. This
+  // closes that window from the other end.
+  const [justAuthed, setJustAuthed] = useState(false);
+
   useDocumentMeta(route);
 
   const me = useQuery(api.members.today, session ? { memberId: session.memberId } : 'skip');
@@ -49,6 +59,7 @@ export default function App() {
 
   const leave = () => {
     identity.release();
+    setJustAuthed(false);
     go('/');
   };
 
@@ -56,10 +67,6 @@ export default function App() {
   // Until then the app would be three empty cards and a board with no
   // rows, which is what /start exists to avoid.
   const onboarded = Boolean(session && me && isOnboarded(me));
-
-  // Where a freshly signed-in person belongs. Onboarding if their setup
-  // is unfinished, the app if it is not.
-  const afterSignIn = (): Route => (onboarded ? '/today' : '/start');
 
   // Identity has settled once auth has resolved and, where there is a
   // member, its day has loaded too. Bouncing before that would send an
@@ -79,6 +86,26 @@ export default function App() {
     go(onboarded ? '/today' : '/start');
   }, [authed, settled, route, onboarded, go]);
 
+  // Signing in sends everyone to /start, because at the moment it
+  // resolves nobody knows yet whether there is a household behind the
+  // account. Once that does settle, someone who is already set up has no
+  // onboarding left to do and belongs in the app.
+  useEffect(() => {
+    if (!justAuthed || route !== '/start' || !settled || !onboarded) return;
+    go('/today');
+  }, [justAuthed, route, settled, onboarded, go]);
+
+  // Whoever the app is acting for, by any of the three ways it can be.
+  const signedIn = authed || justAuthed || Boolean(session);
+
+  // Signing in is over the moment the call comes back. It does not wait
+  // on `isAuthenticated`, because waiting on it is what left people on
+  // the form wondering whether the button had done anything.
+  const onSignedIn = () => {
+    setJustAuthed(true);
+    go('/start');
+  };
+
   const publicPage = (() => {
     switch (route) {
       case '/about':
@@ -94,22 +121,24 @@ export default function App() {
       case '/signin':
         return (
           <>
-            <h1>Welcome back.</h1>
+            <h1>{justAuthed ? 'You’re in.' : 'Welcome back.'}</h1>
             <SignIn
               mode="signIn"
               onSwitch={(to) => go(to === 'signUp' ? '/signup' : '/signin')}
-              onSignedIn={() => go(afterSignIn())}
+              onSignedIn={onSignedIn}
+              justAuthed={justAuthed}
             />
           </>
         );
       case '/signup':
         return (
           <>
-            <h1>Create your account.</h1>
+            <h1>{justAuthed ? 'You’re in.' : 'Create your account.'}</h1>
             <SignIn
               mode="signUp"
               onSwitch={(to) => go(to === 'signUp' ? '/signup' : '/signin')}
-              onSignedIn={() => go(afterSignIn())}
+              onSignedIn={onSignedIn}
+              justAuthed={justAuthed}
             />
           </>
         );
@@ -128,8 +157,16 @@ export default function App() {
         route={route}
         go={go}
         home={home}
-        signedIn={Boolean(session)}
-        header={<SiteHeader go={go} authed={authed} hasHousehold={onboarded} />}
+        signedIn={signedIn}
+        header={
+          <SiteHeader
+            go={go}
+            signedIn={signedIn}
+            justAuthed={justAuthed && (route === '/signin' || route === '/signup')}
+            hasHousehold={onboarded}
+            onSignOut={leave}
+          />
+        }
       >
         {publicPage}
       </Shell>
@@ -143,10 +180,16 @@ export default function App() {
         route={route}
         go={go}
         home={home}
-        signedIn={authed}
+        signedIn={signedIn}
         bare
         header={
-          <SiteHeader go={go} authed={authed} hasHousehold={onboarded} showHowItWorks />
+          <SiteHeader
+            go={go}
+            signedIn={signedIn}
+            hasHousehold={onboarded}
+            showHowItWorks
+            onSignOut={leave}
+          />
         }
       >
         <Landing go={go} hasHousehold={onboarded} />
@@ -161,6 +204,7 @@ export default function App() {
           session={session}
           me={me ?? null}
           authed={authed}
+          justAuthed={justAuthed}
           onSession={(next) => identity.adopt(next)}
           onDone={() => go('/today')}
           go={go}
@@ -177,6 +221,7 @@ export default function App() {
           session={session}
           me={me ?? null}
           authed={authed}
+          justAuthed={justAuthed}
           onSession={(next) => identity.adopt(next)}
           onDone={() => go('/today')}
           go={go}
@@ -199,6 +244,7 @@ export default function App() {
           session={null}
           me={null}
           authed={authed}
+          justAuthed={justAuthed}
           onSession={(next) => identity.adopt(next)}
           onDone={() => go('/today')}
           go={go}

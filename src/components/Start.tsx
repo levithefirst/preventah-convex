@@ -55,6 +55,7 @@ export default function Start({
   session,
   me,
   authed,
+  justAuthed,
   onSession,
   onDone,
   go,
@@ -62,6 +63,8 @@ export default function Start({
   session: Session | null;
   me: Me | null;
   authed: boolean;
+  /** Arrived here straight off a sign-in that resolved. */
+  justAuthed: boolean;
   onSession: (next: Session) => void;
   onDone: () => void;
   go: (to: Route) => void;
@@ -77,14 +80,19 @@ export default function Start({
   // everybody out of their own app, so the flow falls back to the way it
   // worked before accounts existed.
   const accountsUsable = status?.ready ?? false;
-  const needsAccount = accountsUsable && !authed && !skipAccount;
+
+  // Someone who has just signed in is not asked to sign in. They did it
+  // a second ago, on the page they came from, and `authed` can still be
+  // catching up; asking again would read as the account not having
+  // taken.
+  const needsAccount = accountsUsable && !authed && !justAuthed && !skipAccount;
 
   // An invite link adds you to that household instead of asking which
   // shape you want. It is consumed once, and only once there is an
   // account to attach it to.
   useEffect(() => {
     if (!invite || session || claimed.current) return;
-    if (accountsUsable && !authed) return;
+    if (accountsUsable && !authed && !justAuthed) return;
     claimed.current = true;
     void join({ joinCode: invite, memberName: 'Me' })
       .then((result) => {
@@ -96,7 +104,7 @@ export default function Start({
         clearInvite();
       })
       .catch(() => clearInvite());
-  }, [invite, session, authed, accountsUsable, join, onSession]);
+  }, [invite, session, authed, justAuthed, accountsUsable, join, onSession]);
 
   // Derived from what exists rather than from a counter, so a reload in
   // the middle lands back where it left off.
