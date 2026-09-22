@@ -52,9 +52,10 @@ jobs:
           echo "--- GET /signin (a page route)"
           curl -sS -o /dev/null -w 'status=%{http_code}\n' "$SITE/signin" || true
 
-      # No credentials: public functions answer on the unauthenticated
-      # HTTP API, which is the only door open to us. CONVEX_DEPLOY_KEY is
-      # a deploy key and is not granted runInternalActions.
+      # No credentials: `auth:signIn` is public and answers on the
+      # unauthenticated HTTP API. CONVEX_DEPLOY_KEY is a deploy key and
+      # is not granted runInternalActions, so nothing here runs through
+      # the CLI.
       - name: Does the deployment accept the tokens it issues
         run: node scripts/authProbe.mjs
 

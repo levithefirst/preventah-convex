@@ -31,12 +31,7 @@ async function callAction(path, args) {
   return { httpStatus: response.status, body };
 }
 
-console.log('--- authHealth:report');
-const health = await callAction('authHealth:report', {});
-console.log('http status =', health.httpStatus);
-console.log(JSON.stringify(health.body, null, 1));
-
-console.log('\n--- auth:signIn (password, signUp, throwaway account)');
+console.log('--- auth:signIn (password, signUp, throwaway account)');
 const signIn = await callAction('auth:signIn', {
   provider: 'password',
   params: { email, password, name: 'Auth Doctor', flow: 'signUp' },

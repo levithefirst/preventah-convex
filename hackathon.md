@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth (Password, plus Google when configured)
 - **AI models:** gpt-5-nano, falling back to gpt-4.1-nano then gpt-4o-mini
 - **Started:** 2026-09-19T17:58:00Z
-- **Last updated:** 2026-09-22T09:00:00Z
+- **Last updated:** 2026-09-22T16:10:00Z
 
 ## Log
 
@@ -472,3 +472,62 @@ remember, so there is a way past that says plainly what it costs.
 The password rule is on the form rather than only in the input's validation,
 and the header's signed-in state already read Convex Auth rather than the
 household session.
+
+### Sign-in was reported dead on the deployment; the deployment was fine
+
+The report was that a password sign-up creates the account and then
+`useConvexAuth().isAuthenticated` stays false, the header keeps offering Sign
+in, and a hard reload looks signed out. The suspected cause was Convex Auth
+failing to persist a session on `.convex.site`, either a cookie that never
+attaches or `SITE_URL` pointing somewhere else.
+
+None of that turned out to be true, and the only way to find that out was to
+ask the deployment directly. This build environment cannot reach
+`*.convex.site` or `*.convex.dev`, so the questions were asked from GitHub
+Actions instead, in `.github/workflows/auth-doctor.yml`. Manual only, and it
+sets nothing.
+
+What it established, with evidence rather than inference:
+
+- `SITE_URL` on Production is exactly `https://qualified-hummingbird-614.convex.site`.
+  No trailing slash, not `.convex.cloud`, not `http`. **No dashboard change is
+  needed.** If it ever does need setting, the step is: Convex dashboard →
+  Settings → Environment Variables → `SITE_URL` → that exact value.
+- `CONVEX_SITE_URL`, which is what the library stamps into every token as its
+  issuer, is the same string.
+- `JWT_PRIVATE_KEY` and `JWKS` are a genuine pair: a token signed with the
+  private key verifies against the published JWKS.
+- The auth HTTP routes are registered. `/.well-known/openid-configuration` and
+  `/.well-known/jwks.json` both answer 200, and the latter serves one RSA
+  signing key. `GET /api/auth/signin` returning 404 is not a fault:
+  `@convex-dev/auth` registers `/api/auth/signin/` only when OAuth is
+  configured, and the password flow never uses an HTTP route at all. It runs
+  through the `auth:signIn` action.
+- A real password sign-up over the HTTP API returns both a token and a refresh
+  token, RS256, audience `convex`, and the published JWKS verifies it.
+
+Then the live site was driven in Chromium from the same workflow, because the
+one thing a deployment cannot report is what a browser sees. Signing up on
+`https://qualified-hummingbird-614.convex.site/signup` leaves `/signup`, writes
+`__convexAuthJWT` and `__convexAuthRefreshToken` to local storage, and survives
+a hard reload. On `/about`, which renders the site header, the header reads
+Profile and Sign out with no offer to sign in, before and after that reload.
+The console carries no `Failed to authenticate`, which is what Convex logs when
+a token is refused. Nothing was refused.
+
+Two real client faults were fixed on the way, both of which had been making the
+picture harder to read. `signIn` resolves in three different situations and
+only one of them is a session: it returns `{ signingIn: false }` when the call
+succeeded and produced no tokens, and that was being reported as success. And
+the in-memory `justAuthed` flag, added earlier to paper over the symptom, is
+gone: it died on every reload and while it lived it claimed a session the
+deployment had not agreed to. Signed-in is now
+`useConvexAuth().isAuthenticated || Boolean(session)` and nothing else.
+
+Honest limit: the browser probe passed on its first run, so no failing run was
+ever captured. Which of those two changes mattered, or whether the original
+report was against a stale bundle, is not established. What is established is
+the current behaviour, above, and that the deployment was never the problem.
+
+`Continue without an account` is untouched and verified present: a browser that
+has never signed in still gets the account step and the way past it.
